@@ -12,10 +12,10 @@ Este repositório foi concebido como um **Master Blueprint (Guia Mestre de Const
 Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 - **Nenhum trecho de código específico do domínio do sistema real está presente neste repositório** (não há classes de acervo de laboratório, itens específicos ou regras de empréstimo do domínio real).
 - O repositório contém **exclusivamente**:
-  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 15 fases, critérios de aceitação e armadilhas a evitar.
-  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 16 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa e testabilidade com Fakes.
+  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 19 fases, critérios de aceitação e armadilhas a evitar.
+  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 20 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa, testabilidade com Fakes, reatividade de tabelas com FilteredList/SortedList, persistência atômica com backup e locks, barramento de eventos (EventBus) e manipulação temporal com `java.time` e DatePicker.
   3. **Exemplos de Código Compiláveis em Java 21 (`src/main/java/...`)** demonstrando a sintaxe e o uso correto das APIs nativas do JDK e OpenJFX.
-  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados e fakes em memória.
+  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados, persistência atômica, eventos tipados, regras temporais e fakes em memória.
 
 ---
 
@@ -24,9 +24,9 @@ Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 ```text
 guia-reconstrucao-poo-laboratorio/
 ├── README.md                      # Visão geral, filosofia e mapa de estudos
-├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (15 Fases)
+├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (19 Fases)
 ├── pom.xml                        # Configuração Maven com Java 21, OpenJFX, JUnit 5 e Plugins
-├── guias/                         # Cadernos conceituais detalhados (16 Guias Didáticos)
+├── guias/                         # Cadernos conceituais detalhados (20 Guias Didáticos)
 │   ├── 01-modelagem-oo-e-encapsulamento.md
 │   ├── 02-heranca-polimorfismo-e-strategy.md
 │   ├── 03-colecoes-e-defensive-copying.md
@@ -42,7 +42,11 @@ guia-reconstrucao-poo-laboratorio/
 │   ├── 13-javafx-css-seletores-e-temas-dinamicos.md
 │   ├── 14-javafx-navegacao-e-troca-de-telas.md
 │   ├── 15-javafx-validacao-formularios-e-feedback-visual.md
-│   └── 16-testes-unitarios-e-testabilidade-com-fakes.md
+│   ├── 16-testes-unitarios-e-testabilidade-com-fakes.md
+│   ├── 17-javafx-filtros-ordenacao-e-acoes-em-tabelas.md
+│   ├── 18-persistencia-atomica-backup-e-locks.md
+│   ├── 19-event-bus-e-comunicacao-desacoplada-entre-controladores.md
+│   └── 20-javafx-datas-datepicker-e-regras-temporais.md
 └── src/
     ├── main/
     │   ├── java/br/edu/ifpb/didatico/exemplos/
@@ -52,8 +56,9 @@ guia-reconstrucao-poo-laboratorio/
     │   │   │   └── ExemploStrategyPolimorfico.java
     │   │   ├── colecoes/              # Cópia defensiva e Stream API
     │   │   │   └── ExemploColecoesProtegidas.java
-    │   │   ├── csv/                   # I/O manual com BufferedReader/Writer em UTF-8
-    │   │   │   └── ExemploLeituraGravacaoCSV.java
+    │   │   ├── csv/                   # I/O manual, atomic move, backups e locks
+    │   │   │   ├── ExemploLeituraGravacaoCSV.java
+    │   │   │   └── ExemploPersistenciaAtomicaComLock.java
     │   │   ├── excecao/               # Checked Exceptions de domínio
     │   │   │   └── ExemploExcecaoChecada.java
     │   │   ├── arquitetura/           # Camadas desacopladas e Pure Dependency Injection
@@ -63,29 +68,33 @@ guia-reconstrucao-poo-laboratorio/
     │   │   ├── teste/                 # Testabilidade arquitetural com Fake Repository em RAM
     │   │   │   └── ExemploTestabilidadeComFake.java
     │   │   └── javafx/                # Demonstrações ricas de interface desktop
-    │   │       ├── ExemploTabelaEModalJavaFX.java        # TableView, modais e Alerts
-    │   │       ├── ExemploConcorrenciaJavaFX.java         # Task, Worker Threads e Platform.runLater
-    │   │       ├── ExemploDataBindingJavaFX.java          # Properties, validação reativa e listeners
-    │   │       ├── ExemploCssETemasJavaFX.java            # PseudoClass e Alternância Light/Dark Mode
-    │   │       ├── ExemploNavegacaoJavaFX.java            # Padrão Shell e Diálogos Tipados Dialog<R>
-    │   │       └── ExemploValidacaoFormularioJavaFX.java  # Safe Parsing e Validação Reativa UX
+    │   │       ├── ExemploTabelaEModalJavaFX.java               # TableView, modais e Alerts
+    │   │       ├── ExemploConcorrenciaJavaFX.java                # Task, Worker Threads e Platform.runLater
+    │   │       ├── ExemploDataBindingJavaFX.java                 # Properties, validação reativa e listeners
+    │   │       ├── ExemploCssETemasJavaFX.java                   # PseudoClass e Alternância Light/Dark Mode
+    │   │       ├── ExemploNavegacaoJavaFX.java                   # Padrão Shell e Diálogos Tipados Dialog<R>
+    │   │       ├── ExemploValidacaoFormularioJavaFX.java         # Safe Parsing e Validação Reativa UX
+    │   │       ├── ExemploFiltroEOrdenacaoJavaFX.java            # FilteredList, SortedList e Ações por Linha
+    │   │       ├── ExemploEventBusDesacoplado.java               # Pub/Sub centralizado e desacoplamento
+    │   │       └── ExemploDataPickerERegrasTemporaisJavaFX.java  # java.time, DatePicker pt-BR e multas
     │   └── resources/
     │       └── css/                   # Estilos visuais e temas desacoplados
     │           ├── tema-claro.css     # Paleta Light moderna com seletores e pseudo-classes
     │           └── tema-escuro.css    # Paleta Dark mode profissional
     └── test/java/br/edu/ifpb/didatico/exemplos/
-        └── ExemplosDidaticosTest.java # Bateria com 10 testes automatizados no JUnit 5
+        └── ExemplosDidaticosTest.java # Bateria com 13 testes automatizados no JUnit 5
 ```
 
 ---
 
-## 3. Roteiro de Reconstrução em 3 Etapas
+## 3. Roteiro de Reconstrução em 4 Etapas
 
 | Etapa | Foco | Objetivos de Aprendizagem |
 | :--- | :--- | :--- |
 | **Etapa 1** | **Modelo Orientado a Objetos Puro & Terminal** | Encapsulamento, validação de invariantes, herança com superclasse abstrata, polimorfismo via padrão Strategy, composição entre entidades, coleções protegidas com `unmodifiableList`, repositórios CSV manuais (`BufferedReader`/`BufferedWriter`), injeção manual de dependências por construtor e exceções de domínio checadas. |
 | **Etapa 2** | **Interface Desktop Gráfica com JavaFX** | Arquitetura MVC desacoplada com arquivos `.fxml`, injeção com `@FXML` e `Initializable`, tabelas `TableView` com células estilizadas, janelas modais (`Modality.APPLICATION_MODAL`), concorrência em UI com `Task<V>` e `Platform.runLater()`, e reatividade com Data Binding. |
 | **Etapa 3** | **Padrões Avançados de Engenharia e Java 21** | Records com construtor compacto, Sealed Types com Pattern Matching Switch e Guards (`when`), Theming dinâmico via CSS com `PseudoClass` (sem `setStyle`), Padrão Shell para navegação sem múltiplas janelas, Diálogos tipados `Dialog<R>`, Safe Parsing preventivo e Testabilidade pura com Fakes em RAM. |
+| **Etapa 4** | **Reatividade, Integridade Atômica e Desacoplamento** | Pipeline reativo com `FilteredList` e `SortedList`, botões de ação em linhas de tabelas, gravação atômica com `Files.move(..., ATOMIC_MOVE)` e backup `.bak`, concorrência com `ReentrantReadWriteLock`, EventBus centralizado em memória e manipulação moderna de datas (`java.time`) com `DatePicker` brasileiro e bloqueio via `DayCellFactory`. |
 
 ---
 
@@ -145,6 +154,21 @@ mvn test
   mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploValidacaoFormularioJavaFX"
   ```
 
+- **Executar Demonstração de Filtros Dinâmicos, SortedList e Ações em Linhas de Tabelas:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploFiltroEOrdenacaoJavaFX"
+  ```
+
+- **Executar Demonstração de Comunicação Desacoplada com AppEventBus (Pub/Sub):**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploEventBusDesacoplado"
+  ```
+
+- **Executar Demonstração de DatePicker Brasileiro (dd/MM/yyyy), DayCellFactory e java.time:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploDataPickerERegrasTemporaisJavaFX"
+  ```
+
 ### 5.4 Execução das Demonstrações de Console / Terminal
 
 - **Demonstração de Injeção de Dependências e Arquitetura em Camadas:**
@@ -160,4 +184,9 @@ mvn test
 - **Demonstração de Testabilidade com Repositório Fake em Memória:**
   ```bash
   mvn exec:java -Dexec.mainClass="br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake"
+  ```
+
+- **Demonstração de Persistência Atômica (Safe Atomic Move), Backup (.bak) e Locks Concorrentes:**
+  ```bash
+  mvn exec:java -Dexec.mainClass="br.edu.ifpb.didatico.exemplos.csv.ExemploPersistenciaAtomicaComLock"
   ```

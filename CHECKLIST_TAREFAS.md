@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **15 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **19 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -8,6 +8,7 @@
 - [ ] **Etapa 1: Núcleo de Domínio, Persistência CSV, Inversão de Dependências e Terminal (Fases 1 a 8)**
 - [ ] **Etapa 2: Interface Desktop Gráfica em JavaFX, FXML, Concorrência e Data Binding (Fases 9 e 10)**
 - [ ] **Etapa 3: Padrões Avançados de Engenharia, Java 21 Moderno, Theming, Navegação e Testabilidade (Fases 11 a 15)**
+- [ ] **Etapa 4: Reatividade em Tabelas, Integridade Atômica, Desacoplamento e Regras Temporais (Fases 16 a 19)**
 
 ---
 
@@ -204,3 +205,51 @@
   - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/teste/ExemploTestabilidadeComFake.java`
 - [ ] **Tarefa 15.2: Testar Regras de Negócio Críticas em Microssegundos**
   - *Descrição:* Escrever testes automatizados JUnit 5 cobrindo regras de limites máximos por pessoa, colisões de estado e reversão de operações.
+
+---
+
+## Fase 16 — Filtros Dinâmicos, Ordenação com SortedList e Ações em TableView
+- [ ] **Tarefa 16.1: Implementar o Pipeline Reativo em Tabelas**
+  - *Descrição:* Envelopar a lista mestre em `FilteredList` e `SortedList`, conectando `sortedList.comparatorProperty().bind(tabela.comparatorProperty())` para preservar a ordenação ao filtrar.
+  - *Guia Relacionado:* `guias/17-javafx-filtros-ordenacao-e-acoes-em-tabelas.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploFiltroEOrdenacaoJavaFX.java`
+- [ ] **Tarefa 16.2: Combinar Filtro Textual e Filtro de Estado (ComboBox)**
+  - *Descrição:* Construir predicado composto dinâmico atualizado via listeners nos controles de entrada da UI, sem nunca limpar ou repovoar a lista manualmente.
+- [ ] **Tarefa 16.3: Criar Coluna de Ações com Botões Customizados em TableCell**
+  - *Descrição:* Implementar botões (ex.: Devolver, Excluir) dentro das linhas da tabela, associando diálogos de confirmação (`Alert.AlertType.CONFIRMATION`) antes de executar mutações.
+
+---
+
+## Fase 17 — Persistência Segura com Gravação Atômica, Backup e Concorrência
+- [ ] **Tarefa 17.1: Implementar o Padrão Safe Atomic Write em Repositório CSV**
+  - *Descrição:* Escrever registros inicialmente em arquivo temporário (`.tmp`) no mesmo diretório e substituir o arquivo original via `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)`.
+  - *Guia Relacionado:* `guias/18-persistencia-atomica-backup-e-locks.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/csv/ExemploPersistenciaAtomicaComLock.java`
+- [ ] **Tarefa 17.2: Implementar Rotina de Backup Automático (.bak) e Recuperação**
+  - *Descrição:* Gerar cópia de segurança antes de sobrescrever o arquivo oficial e prover rotina para restauração em caso de corrupção ou apagamento acidental.
+- [ ] **Tarefa 17.3: Orquestrar Concorrência com `ReentrantReadWriteLock`**
+  - *Descrição:* Proteger o repositório permitindo leituras simultâneas (`readLock`) e isolamento estrito durante gravações (`writeLock`).
+
+---
+
+## Fase 18 — Barramento de Eventos (EventBus) e Desacoplamento entre Telas
+- [ ] **Tarefa 18.1: Implementar o `AppEventBus` Thread-Safe**
+  - *Descrição:* Criar barramento centralizado em memória com método `inscrever(tipoEvento, consumidor)` retornando token de cancelamento para prevenir vazamento de memória (Memory Leaks).
+  - *Guia Relacionado:* `guias/19-event-bus-e-comunicacao-desacoplada-entre-controladores.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploEventBusDesacoplado.java`
+- [ ] **Tarefa 18.2: Modelar Eventos de Domínio com Records Imutáveis do Java 21**
+  - *Descrição:* Declarar eventos de notificação como records (ex.: `ItemCadastradoEvent`, `ItemExcluidoEvent`), garantindo que o estado não seja corrompido entre consumidores.
+- [ ] **Tarefa 18.3: Integrar Despacho Automático na UI Thread**
+  - *Descrição:* Fazer com que o barramento verifique `Platform.isFxApplicationThread()` e despache notificações via `Platform.runLater()` automaticamente.
+
+---
+
+## Fase 19 — Manipulação de Datas Modernas (`java.time`) e Regras Temporais
+- [ ] **Tarefa 19.1: Integrar `DatePicker` com Conversor Formatado em Padrão Brasileiro**
+  - *Descrição:* Configurar `StringConverter<LocalDate>` para exibir e receber datas no formato `dd/MM/yyyy`, tratando parsing defensivamente sem estourar exceções.
+  - *Guia Relacionado:* `guias/20-javafx-datas-datepicker-e-regras-temporais.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploDataPickerERegrasTemporaisJavaFX.java`
+- [ ] **Tarefa 19.2: Bloquear Datas Inválidas no Calendário com `DayCellFactory`**
+  - *Descrição:* Desabilitar visualmente no calendário datas anteriores ao início do empréstimo e destacar finais de semana.
+- [ ] **Tarefa 19.3: Implementar Cálculo de Atrasos, Dias Úteis e Multas Regulamentares**
+  - *Descrição:* Criar utilitário temporal com `ChronoUnit.DAYS.between()`, cálculo de dias úteis e projeção de penalidades com carência regulamentar.

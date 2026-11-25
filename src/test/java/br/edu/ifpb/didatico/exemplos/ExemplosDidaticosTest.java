@@ -9,8 +9,15 @@ import br.edu.ifpb.didatico.exemplos.colecoes.ExemploColecoesProtegidas.Catalogo
 import br.edu.ifpb.didatico.exemplos.colecoes.ExemploColecoesProtegidas.ItemEstoque;
 import br.edu.ifpb.didatico.exemplos.csv.ExemploLeituraGravacaoCSV;
 import br.edu.ifpb.didatico.exemplos.csv.ExemploLeituraGravacaoCSV.RegistroExemplo;
+import br.edu.ifpb.didatico.exemplos.csv.ExemploPersistenciaAtomicaComLock.RegistroPatrimonial;
+import br.edu.ifpb.didatico.exemplos.csv.ExemploPersistenciaAtomicaComLock.RepositorioPatrimonialCSV;
 import br.edu.ifpb.didatico.exemplos.excecao.ExemploExcecaoChecada.RecursoOcupadoException;
 import br.edu.ifpb.didatico.exemplos.excecao.ExemploExcecaoChecada.VagaEstacionamento;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploDataPickerERegrasTemporaisJavaFX.DataBrConverter;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploDataPickerERegrasTemporaisJavaFX.RegrasTemporais;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploEventBusDesacoplado.AppEventBus;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploEventBusDesacoplado.ItemCadastradoEvent;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploEventBusDesacoplado.ItemExcluidoEvent;
 import br.edu.ifpb.didatico.exemplos.javafx.ExemploValidacaoFormularioJavaFX.SafeParser;
 import br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed;
 import br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed.MovimentacaoEstoque;
@@ -32,13 +39,19 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -244,5 +257,149 @@ public class ExemplosDidaticosTest {
 
         assertDoesNotThrow(() -> servico.alocarRecurso("REC-03", "Gabriel"));
         assertEquals(2, repo.contarPorResponsavel("Gabriel"));
+    }
+
+    @Test
+    @DisplayName("Guia 18 & Persistência Atômica: Deve gravar com atomicidade, gerar backup e permitir restauração")
+    void testPersistenciaAtomicaComLockEBackup() throws IOException {
+        Path tempDir = Files.createTempDirectory("teste-repo-atomico-");
+        Path arquivoOficial = tempDir.resolve("acervo.csv");
+        RepositorioPatrimonialCSV repo = new RepositorioPatrimonialCSV(arquivoOficial);
+
+        try {
+            // 1. Gravação do Lote 1
+            List<RegistroPatrimonial> lote1 = List.of(
+                    new RegistroPatrimonial("PAT-01", "Notebook Core i7", new BigDecimal("4500.00"), true),
+                    new RegistroPatrimonial("PAT-02", "Projetor HDMI", new BigDecimal("2200.00"), true)
+            );
+            repo.salvarTodos(lote1);
+
+            assertTrue(Files.exists(arquivoOficial));
+            assertFalse(Files.exists(repo.getCaminhoBackup())); // Primeiro salvamento: sem backup anterior
+            assertEquals(2, repo.listarTodos().size());
+
+            // 2. Gravação do Lote 2 -> Deve gerar backup automático contendo o Lote 1
+            List<RegistroPatrimonial> lote2 = List.of(
+                    new RegistroPatrimonial("PAT-01", "Notebook Core i7", new BigDecimal("4500.00"), true),
+                    new RegistroPatrimonial("PAT-02", "Projetor HDMI", new BigDecimal("2200.00"), true),
+                    new RegistroPatrimonial("PAT-03", "Câmera 4K", new BigDecimal("3800.00"), false)
+            );
+            repo.salvarTodos(lote2);
+
+            assertTrue(Files.exists(repo.getCaminhoBackup()), "Backup (.bak) deve existir após reescrita");
+            assertEquals(3, repo.listarTodos().size());
+
+            // 3. Simula corrupção/remoção do arquivo oficial e restauração via backup
+            Files.deleteIfExists(arquivoOficial);
+            assertFalse(Files.exists(arquivoOficial));
+
+            boolean restaurou = repo.restaurarBackup();
+            assertTrue(restaurou, "Restauração deve ter sucesso a partir do backup");
+            assertTrue(Files.exists(arquivoOficial));
+
+            // O backup restaurado continha o estado anterior (Lote 1)
+            assertEquals(2, repo.listarTodos().size());
+            assertEquals("PAT-01", repo.listarTodos().get(0).tombamento());
+        } finally {
+            Files.deleteIfExists(arquivoOficial);
+            Files.deleteIfExists(repo.getCaminhoBackup());
+            Files.deleteIfExists(tempDir);
+        }
+    }
+
+    @Test
+    @DisplayName("Guia 19 & EventBus: Deve despachar eventos tipados para ouvintes e respeitar cancelamento")
+    void testEventBusDesacoplado() {
+        AppEventBus bus = AppEventBus.getInstance();
+        bus.limparTodos();
+
+        AtomicInteger cadastrosRecebidosOuvinte1 = new AtomicInteger(0);
+        AtomicInteger cadastrosRecebidosOuvinte2 = new AtomicInteger(0);
+        AtomicInteger exclusoesRecebidas = new AtomicInteger(0);
+        AtomicReference<String> ultimoCodigoCadastrado = new AtomicReference<>();
+
+        // Inscrição 1: Ouvinte 1 de Cadastros
+        Runnable cancelaOuvinte1 = bus.inscrever(ItemCadastradoEvent.class, evt -> {
+            cadastrosRecebidosOuvinte1.incrementAndGet();
+            ultimoCodigoCadastrado.set(evt.codigo());
+        });
+
+        // Inscrição 2: Ouvinte 2 de Cadastros (Dashboard)
+        Runnable cancelaOuvinte2 = bus.inscrever(ItemCadastradoEvent.class, evt ->
+                cadastrosRecebidosOuvinte2.incrementAndGet());
+
+        // Inscrição 3: Ouvinte de Exclusões
+        Runnable cancelaExclusoes = bus.inscrever(ItemExcluidoEvent.class, evt ->
+                exclusoesRecebidas.incrementAndGet());
+
+        // Dispara primeiro evento de cadastro
+        bus.publicar(new ItemCadastradoEvent("ITEM-99", "Mesa Digitalizadora"));
+        assertEquals(1, cadastrosRecebidosOuvinte1.get());
+        assertEquals(1, cadastrosRecebidosOuvinte2.get());
+        assertEquals(0, exclusoesRecebidas.get());
+        assertEquals("ITEM-99", ultimoCodigoCadastrado.get());
+
+        // Cancela Ouvinte 1
+        cancelaOuvinte1.run();
+
+        // Dispara segundo evento de cadastro
+        bus.publicar(new ItemCadastradoEvent("ITEM-100", "Microfone Condensador"));
+        assertEquals(1, cadastrosRecebidosOuvinte1.get(), "Ouvinte 1 cancelado não deve mais receber eventos");
+        assertEquals(2, cadastrosRecebidosOuvinte2.get(), "Ouvinte 2 ativo deve receber o novo evento");
+
+        // Dispara evento de exclusão
+        bus.publicar(new ItemExcluidoEvent("ITEM-99"));
+        assertEquals(1, exclusoesRecebidas.get());
+
+        // Limpeza
+        cancelaOuvinte2.run();
+        cancelaExclusoes.run();
+        bus.limparTodos();
+    }
+
+    @Test
+    @DisplayName("Guia 20 & Datas Modernas: Deve calcular prazos, atrasos, multas e converter pt-BR com segurança")
+    void testRegrasTemporaisEDatePickerConverter() {
+        LocalDate inicio = LocalDate.of(2026, 11, 10); // Terça-feira
+        LocalDate prazoPrevisto = LocalDate.of(2026, 11, 17); // 7 dias depois
+
+        // 1. Devolução no prazo ou antecipada -> 0 dias de atraso
+        assertEquals(0, RegrasTemporais.calcularDiasAtraso(prazoPrevisto, prazoPrevisto));
+        assertEquals(0, RegrasTemporais.calcularDiasAtraso(prazoPrevisto, LocalDate.of(2026, 11, 15)));
+
+        // 2. Devolução com 5 dias de atraso
+        LocalDate devolucaoTardia = LocalDate.of(2026, 11, 22);
+        long diasAtraso = RegrasTemporais.calcularDiasAtraso(prazoPrevisto, devolucaoTardia);
+        assertEquals(5, diasAtraso);
+
+        // 3. Cálculo de multa (R$ 3,50 por dia, carência 0 dias)
+        BigDecimal multaSemCarencia = RegrasTemporais.calcularMulta(diasAtraso, new BigDecimal("3.50"), 0);
+        assertEquals(0, new BigDecimal("17.50").compareTo(multaSemCarencia));
+
+        // 4. Cálculo de multa com carência de 2 dias (cobra apenas 3 dias)
+        BigDecimal multaComCarencia = RegrasTemporais.calcularMulta(diasAtraso, new BigDecimal("3.50"), 2);
+        assertEquals(0, new BigDecimal("10.50").compareTo(multaComCarencia));
+
+        // 5. Adição de dias úteis (Inicia na sexta 13/11/2026 + 3 dias úteis -> Seg 16, Ter 17, Qua 18)
+        LocalDate sexta = LocalDate.of(2026, 11, 13);
+        LocalDate resultadoDiasUteis = RegrasTemporais.adicionarDiasUteis(sexta, 3);
+        assertEquals(LocalDate.of(2026, 11, 18), resultadoDiasUteis);
+
+        // 6. DataBrConverter
+        DataBrConverter converter = new DataBrConverter();
+        assertEquals("25/11/2026", converter.toString(LocalDate.of(2026, 11, 25)));
+        assertEquals("", converter.toString(null));
+
+        LocalDate parsed = converter.fromString("25/11/2026");
+        assertNotNull(parsed);
+        assertEquals(2026, parsed.getYear());
+        assertEquals(11, parsed.getMonthValue());
+        assertEquals(25, parsed.getDayOfMonth());
+
+        // Parse de entradas inválidas não deve lançar exceção, deve retornar null com segurança
+        assertNull(converter.fromString("invalido"));
+        assertNull(converter.fromString("32/13/2026"));
+        assertNull(converter.fromString(""));
+        assertNull(converter.fromString(null));
     }
 }
