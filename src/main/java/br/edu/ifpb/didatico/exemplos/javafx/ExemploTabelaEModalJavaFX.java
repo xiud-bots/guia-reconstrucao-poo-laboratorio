@@ -93,7 +93,9 @@ public class ExemploTabelaEModalJavaFX extends Application {
             }
         });
 
-        tabela.getColumns().addAll(colIsbn, colTitulo, colStatus);
+        tabela.getColumns().add(colIsbn);
+        tabela.getColumns().add(colTitulo);
+        tabela.getColumns().add(colStatus);
         tabela.setItems(dados);
         raiz.setCenter(tabela);
 
