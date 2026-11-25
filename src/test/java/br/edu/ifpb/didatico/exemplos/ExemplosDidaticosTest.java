@@ -33,6 +33,20 @@ import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RecursoAu
 import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RecursoIndisponivelException;
 import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RepositorioRecursoFakeMemoria;
 import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.ServicoReserva;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploDashboardGraficosJavaFX.ItemPatrimonialAnalitico;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploDashboardGraficosJavaFX.ResumoGeral;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploDashboardGraficosJavaFX.ServicoAnalitico;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX.ComandoAlternarManutencao;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX.ComandoCadastrarItem;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX.ComandoRemoverItem;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX.GerenciadorHistorico;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX.ItemInventario;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX.ExportadorCsvFormatado;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX.GeradorReciboFormatado;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX.ItemMovimentado;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploTratamentoGlobalErrosJavaFX.TratadorFalhasGlobal;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +56,9 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -401,5 +417,142 @@ public class ExemplosDidaticosTest {
         assertNull(converter.fromString("32/13/2026"));
         assertNull(converter.fromString(""));
         assertNull(converter.fromString(null));
+    }
+
+    @Test
+    @DisplayName("Guia 21 & Dashboards: Deve calcular métricas agrupadas e resumos analíticos com Streams")
+    void testAgregacoesStreamsEDashboard() {
+        ServicoAnalitico servico = new ServicoAnalitico();
+        List<ItemPatrimonialAnalitico> itens = List.of(
+                new ItemPatrimonialAnalitico("IT-01", "Notebook A", "TI", new BigDecimal("3000.00"), true),
+                new ItemPatrimonialAnalitico("IT-02", "Notebook B", "TI", new BigDecimal("3500.00"), false),
+                new ItemPatrimonialAnalitico("IT-03", "Projetor 4K", "Audiovisual", new BigDecimal("2500.00"), true),
+                new ItemPatrimonialAnalitico("IT-04", "Switch 24p", "Redes", new BigDecimal("1200.00"), false)
+        );
+
+        // 1. Contagem por Categoria
+        Map<String, Long> contagem = servico.contarPorCategoria(itens);
+        assertEquals(2L, contagem.get("TI"));
+        assertEquals(1L, contagem.get("Audiovisual"));
+        assertEquals(1L, contagem.get("Redes"));
+
+        // 2. Valor Total por Categoria
+        Map<String, BigDecimal> valores = servico.calcularValorTotalPorCategoria(itens);
+        assertEquals(0, new BigDecimal("6500.00").compareTo(valores.get("TI")));
+        assertEquals(0, new BigDecimal("2500.00").compareTo(valores.get("Audiovisual")));
+        assertEquals(0, new BigDecimal("1200.00").compareTo(valores.get("Redes")));
+
+        // 3. Resumo Geral com Particionamento
+        ResumoGeral resumo = servico.calcularResumo(itens);
+        assertEquals(4L, resumo.totalItens());
+        assertEquals(2L, resumo.itensEmUso());
+        assertEquals(2L, resumo.itensDisponiveis());
+        assertEquals(0, new BigDecimal("10200.00").compareTo(resumo.valorTotalGeral()));
+        assertEquals(50.0, resumo.percentualOcupacao(), 0.001);
+    }
+
+    @Test
+    @DisplayName("Guia 22 & Command: Deve executar, desfazer, refazer e manter trilha de auditoria")
+    void testPadraoCommandUndoRedo() {
+        ObservableList<ItemInventario> lista = FXCollections.observableArrayList();
+        GerenciadorHistorico historico = new GerenciadorHistorico(10);
+
+        ItemInventario item1 = new ItemInventario("A-1", "Servidor", "TI", false);
+        ItemInventario item2 = new ItemInventario("A-2", "Câmera", "Audiovisual", false);
+
+        assertFalse(historico.podeDesfazerProperty().get());
+        assertFalse(historico.podeRefazerProperty().get());
+
+        // 1. Cadastra item 1
+        historico.executarComando(new ComandoCadastrarItem(lista, item1));
+        assertEquals(1, lista.size());
+        assertTrue(historico.podeDesfazerProperty().get());
+        assertFalse(historico.podeRefazerProperty().get());
+
+        // 2. Cadastra item 2
+        historico.executarComando(new ComandoCadastrarItem(lista, item2));
+        assertEquals(2, lista.size());
+
+        // 3. Alterna status de manutenção do item 1
+        historico.executarComando(new ComandoAlternarManutencao(item1));
+        assertTrue(item1.isEmManutencao());
+
+        // 4. Desfaz alternância de manutenção
+        historico.desfazer();
+        assertFalse(item1.isEmManutencao());
+        assertTrue(historico.podeRefazerProperty().get());
+
+        // 5. Refaz alternância
+        historico.refazer();
+        assertTrue(item1.isEmManutencao());
+
+        // 6. Remove item 2 e desfaz remoção (deve reinserir preservando integridade)
+        historico.executarComando(new ComandoRemoverItem(lista, item2));
+        assertEquals(1, lista.size());
+        assertFalse(lista.contains(item2));
+
+        historico.desfazer();
+        assertEquals(2, lista.size());
+        assertTrue(lista.contains(item2));
+
+        // 7. Trilha de auditoria preenchida
+        assertFalse(historico.getTrilhaAuditoria().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Guia 23 & Recibos: Deve gerar texto monoespaçado tabulado com hash SHA-256 e CSV")
+    void testGeradorReciboFormatadoEAutenticidade() {
+        List<ItemMovimentado> itens = List.of(
+                new ItemMovimentado("PAT-01", "Notebook Corporativo", new BigDecimal("45.00")),
+                new ItemMovimentado("PAT-02", "Projetor Laser", new BigDecimal("35.00"))
+        );
+
+        LocalDateTime agora = LocalDateTime.of(2026, 11, 25, 20, 30, 0);
+        String recibo = GeradorReciboFormatado.gerarReciboMovimentacao(
+                "TX-999", "Prof. Gabriel", "Aluno Lucas", itens, new BigDecimal("10.00"), agora);
+
+        // Validações do Recibo Monoespaçado
+        assertTrue(recibo.contains("TX-999"));
+        assertTrue(recibo.contains("Prof. Gabriel"));
+        assertTrue(recibo.contains("Aluno Lucas"));
+        assertTrue(recibo.contains("PAT-01"));
+        assertTrue(recibo.contains("TOTAL CONSOLIDADO"));
+        assertTrue(recibo.contains("Chave de Autenticação:"));
+
+        // Hash SHA-256 determinístico
+        String hash1 = GeradorReciboFormatado.gerarHashAutenticidade("TX-999", "Aluno Lucas", new BigDecimal("90.00"));
+        String hash2 = GeradorReciboFormatado.gerarHashAutenticidade("TX-999", "Aluno Lucas", new BigDecimal("90.00"));
+        assertEquals(hash1, hash2);
+        assertEquals(24, hash1.length());
+
+        // Exportador CSV
+        String csv = ExportadorCsvFormatado.gerarCsv(itens);
+        assertTrue(csv.contains("PAT-01;Notebook Corporativo;45.00"));
+        assertTrue(csv.contains("PAT-02;Projetor Laser;35.00"));
+    }
+
+    @Test
+    @DisplayName("Guia 24 & Resiliência: Deve formatar log de diagnóstico e registrar falha em disco com stacktrace")
+    void testTratadorFalhasELogDiagnostico() throws IOException {
+        Path tempLog = Files.createTempFile("teste-diagnostico-", ".log");
+        tempLog.toFile().deleteOnExit();
+
+        Exception excecaoSimulada = new IllegalArgumentException("Parâmetro de negócio corrompido");
+        Thread threadSimulada = new Thread("Thread-Teste-Automatizado");
+
+        String entradaFormatada = TratadorFalhasGlobal.formatarEntradaLog(threadSimulada, excecaoSimulada);
+        assertTrue(entradaFormatada.contains("Thread-Teste-Automatizado"));
+        assertTrue(entradaFormatada.contains("IllegalArgumentException"));
+        assertTrue(entradaFormatada.contains("Parâmetro de negócio corrompido"));
+        assertTrue(entradaFormatada.contains("Rastreamento de Pilha:"));
+
+        // Grava no disco
+        TratadorFalhasGlobal.registrarLogEmDisco(tempLog, threadSimulada, excecaoSimulada);
+        assertTrue(Files.exists(tempLog));
+        String conteudoArquivo = Files.readString(tempLog);
+        assertTrue(conteudoArquivo.contains("Thread-Teste-Automatizado"));
+        assertTrue(conteudoArquivo.contains("Parâmetro de negócio corrompido"));
+
+        Files.deleteIfExists(tempLog);
     }
 }

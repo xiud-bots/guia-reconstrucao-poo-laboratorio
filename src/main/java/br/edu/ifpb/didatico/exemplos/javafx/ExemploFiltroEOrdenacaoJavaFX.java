@@ -108,7 +108,7 @@ public class ExemploFiltroEOrdenacaoJavaFX extends Application {
 
         // 4. Criação da Tabela e Colunas
         TableView<DispositivoRecurso> tabela = new TableView<>();
-        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
         TableColumn<DispositivoRecurso, String> colCodigo = new TableColumn<>("Código");
         colCodigo.setCellValueFactory(cell -> cell.getValue().codigoProperty());

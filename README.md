@@ -12,10 +12,10 @@ Este repositório foi concebido como um **Master Blueprint (Guia Mestre de Const
 Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 - **Nenhum trecho de código específico do domínio do sistema real está presente neste repositório** (não há classes de acervo de laboratório, itens específicos ou regras de empréstimo do domínio real).
 - O repositório contém **exclusivamente**:
-  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 19 fases, critérios de aceitação e armadilhas a evitar.
-  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 20 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa, testabilidade com Fakes, reatividade de tabelas com FilteredList/SortedList, persistência atômica com backup e locks, barramento de eventos (EventBus) e manipulação temporal com `java.time` e DatePicker.
+  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 23 fases, critérios de aceitação e armadilhas a evitar.
+  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 24 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa, testabilidade com Fakes, reatividade de tabelas com FilteredList/SortedList, persistência atômica com backup e locks, barramento de eventos (EventBus), manipulação temporal com `java.time` e DatePicker, dashboards analíticos com gráficos (PieChart/BarChart), padrão Command com Undo/Redo, exportação de relatórios/recibos formatados com FileChooser e resiliência com UncaughtExceptionHandler global.
   3. **Exemplos de Código Compiláveis em Java 21 (`src/main/java/...`)** demonstrando a sintaxe e o uso correto das APIs nativas do JDK e OpenJFX.
-  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados, persistência atômica, eventos tipados, regras temporais e fakes em memória.
+  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados, persistência atômica, eventos tipados, regras temporais, fakes em memória, agregações analíticas, padrão Command e tratamento global de falhas (17 testes automatizados).
 
 ---
 
@@ -24,9 +24,9 @@ Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 ```text
 guia-reconstrucao-poo-laboratorio/
 ├── README.md                      # Visão geral, filosofia e mapa de estudos
-├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (19 Fases)
+├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (23 Fases)
 ├── pom.xml                        # Configuração Maven com Java 21, OpenJFX, JUnit 5 e Plugins
-├── guias/                         # Cadernos conceituais detalhados (20 Guias Didáticos)
+├── guias/                         # Cadernos conceituais detalhados (24 Guias Didáticos)
 │   ├── 01-modelagem-oo-e-encapsulamento.md
 │   ├── 02-heranca-polimorfismo-e-strategy.md
 │   ├── 03-colecoes-e-defensive-copying.md
@@ -46,7 +46,11 @@ guia-reconstrucao-poo-laboratorio/
 │   ├── 17-javafx-filtros-ordenacao-e-acoes-em-tabelas.md
 │   ├── 18-persistencia-atomica-backup-e-locks.md
 │   ├── 19-event-bus-e-comunicacao-desacoplada-entre-controladores.md
-│   └── 20-javafx-datas-datepicker-e-regras-temporais.md
+│   ├── 20-javafx-datas-datepicker-e-regras-temporais.md
+│   ├── 21-javafx-dashboards-metricas-e-graficos.md
+│   ├── 22-padrao-command-undo-redo-e-historico.md
+│   ├── 23-exportacao-relatorios-recibos-e-filechooser.md
+│   └── 24-resiliencia-global-uncaught-exceptions-e-logs.md
 └── src/
     ├── main/
     │   ├── java/br/edu/ifpb/didatico/exemplos/
@@ -76,18 +80,22 @@ guia-reconstrucao-poo-laboratorio/
     │   │       ├── ExemploValidacaoFormularioJavaFX.java         # Safe Parsing e Validação Reativa UX
     │   │       ├── ExemploFiltroEOrdenacaoJavaFX.java            # FilteredList, SortedList e Ações por Linha
     │   │       ├── ExemploEventBusDesacoplado.java               # Pub/Sub centralizado e desacoplamento
-    │   │       └── ExemploDataPickerERegrasTemporaisJavaFX.java  # java.time, DatePicker pt-BR e multas
+    │   │       ├── ExemploDataPickerERegrasTemporaisJavaFX.java  # java.time, DatePicker pt-BR e multas
+    │   │       ├── ExemploDashboardGraficosJavaFX.java           # PieChart, BarChart e Métricas Streams
+    │   │       ├── ExemploCommandUndoRedoJavaFX.java             # GoF Command, Undo/Redo e Atalhos Ctrl+Z/Y
+    │   │       ├── ExemploExportacaoRelatoriosEFileChooserJavaFX.java # Recibos monoespaçados, CSV e FileChooser
+    │   │       └── ExemploTratamentoGlobalErrosJavaFX.java       # Resiliência Global e Logs de Diagnóstico
     │   └── resources/
     │       └── css/                   # Estilos visuais e temas desacoplados
     │           ├── tema-claro.css     # Paleta Light moderna com seletores e pseudo-classes
     │           └── tema-escuro.css    # Paleta Dark mode profissional
     └── test/java/br/edu/ifpb/didatico/exemplos/
-        └── ExemplosDidaticosTest.java # Bateria com 13 testes automatizados no JUnit 5
+        └── ExemplosDidaticosTest.java # Bateria com 17 testes automatizados no JUnit 5
 ```
 
 ---
 
-## 3. Roteiro de Reconstrução em 4 Etapas
+## 3. Roteiro de Reconstrução em 5 Etapas
 
 | Etapa | Foco | Objetivos de Aprendizagem |
 | :--- | :--- | :--- |
@@ -95,6 +103,7 @@ guia-reconstrucao-poo-laboratorio/
 | **Etapa 2** | **Interface Desktop Gráfica com JavaFX** | Arquitetura MVC desacoplada com arquivos `.fxml`, injeção com `@FXML` e `Initializable`, tabelas `TableView` com células estilizadas, janelas modais (`Modality.APPLICATION_MODAL`), concorrência em UI com `Task<V>` e `Platform.runLater()`, e reatividade com Data Binding. |
 | **Etapa 3** | **Padrões Avançados de Engenharia e Java 21** | Records com construtor compacto, Sealed Types com Pattern Matching Switch e Guards (`when`), Theming dinâmico via CSS com `PseudoClass` (sem `setStyle`), Padrão Shell para navegação sem múltiplas janelas, Diálogos tipados `Dialog<R>`, Safe Parsing preventivo e Testabilidade pura com Fakes em RAM. |
 | **Etapa 4** | **Reatividade, Integridade Atômica e Desacoplamento** | Pipeline reativo com `FilteredList` e `SortedList`, botões de ação em linhas de tabelas, gravação atômica com `Files.move(..., ATOMIC_MOVE)` e backup `.bak`, concorrência com `ReentrantReadWriteLock`, EventBus centralizado em memória e manipulação moderna de datas (`java.time`) com `DatePicker` brasileiro e bloqueio via `DayCellFactory`. |
+| **Etapa 5** | **Inteligência Visual, Reversibilidade e Resiliência Operacional** | Dashboards executivos com `PieChart` e `BarChart`, agregações com Java Streams (`groupingBy`, `counting`, `reducing`), Padrão GoF Command com pilhas reversíveis de Undo/Redo e atalhos de teclado (`Ctrl+Z`/`Ctrl+Y`), exportação de recibos tabulares monoespaçados com hash de validação SHA-256 e `FileChooser` nativo, e proteção de resiliência com `UncaughtExceptionHandler` global e gravação append-only em `app-erros.log`. |
 
 ---
 
@@ -167,6 +176,26 @@ mvn test
 - **Executar Demonstração de DatePicker Brasileiro (dd/MM/yyyy), DayCellFactory e java.time:**
   ```bash
   mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploDataPickerERegrasTemporaisJavaFX"
+  ```
+
+- **Executar Demonstração de Dashboard Executivo e Gráficos (PieChart, BarChart e KPIs):**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploDashboardGraficosJavaFX"
+  ```
+
+- **Executar Demonstração de Padrão Command, Undo/Redo e Atalhos de Teclado (Ctrl+Z / Ctrl+Y):**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploCommandUndoRedoJavaFX"
+  ```
+
+- **Executar Demonstração de Recibos Monoespaçados, CSV e Diálogos FileChooser:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX"
+  ```
+
+- **Executar Demonstração de Resiliência Global, UncaughtExceptionHandler e Logs:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploTratamentoGlobalErrosJavaFX"
   ```
 
 ### 5.4 Execução das Demonstrações de Console / Terminal

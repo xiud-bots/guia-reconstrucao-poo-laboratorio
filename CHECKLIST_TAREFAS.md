@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **19 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **23 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -9,6 +9,7 @@
 - [ ] **Etapa 2: Interface Desktop Gráfica em JavaFX, FXML, Concorrência e Data Binding (Fases 9 e 10)**
 - [ ] **Etapa 3: Padrões Avançados de Engenharia, Java 21 Moderno, Theming, Navegação e Testabilidade (Fases 11 a 15)**
 - [ ] **Etapa 4: Reatividade em Tabelas, Integridade Atômica, Desacoplamento e Regras Temporais (Fases 16 a 19)**
+- [ ] **Etapa 5: Inteligência Visual, Reversibilidade e Resiliência Operacional (Fases 20 a 23)**
 
 ---
 
@@ -253,3 +254,51 @@
   - *Descrição:* Desabilitar visualmente no calendário datas anteriores ao início do empréstimo e destacar finais de semana.
 - [ ] **Tarefa 19.3: Implementar Cálculo de Atrasos, Dias Úteis e Multas Regulamentares**
   - *Descrição:* Criar utilitário temporal com `ChronoUnit.DAYS.between()`, cálculo de dias úteis e projeção de penalidades com carência regulamentar.
+
+---
+
+## Fase 20 — Dashboards Executivos, Métricas Agregadas e Gráficos (`PieChart` e `BarChart`)
+- [ ] **Tarefa 20.1: Implementar Agregações com Streams API e Coletores Avançados**
+  - *Descrição:* Criar métodos no serviço analítico utilizando `Collectors.groupingBy()`, `Collectors.counting()`, `Collectors.reducing()` e `Collectors.partitioningBy()` para consolidar resumos e taxas de ocupação sem laços imperativos.
+  - *Guia Relacionado:* `guias/21-javafx-dashboards-metricas-e-graficos.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploDashboardGraficosJavaFX.java`
+- [ ] **Tarefa 20.2: Construir Gráfico de Setores (`PieChart`) com Proporções e Tooltips**
+  - *Descrição:* Mapear dados agregados em instâncias de `PieChart.Data`, instalando `Tooltip` com percentuais calculados e formatação defensiva para coleções vazias.
+- [ ] **Tarefa 20.3: Construir Gráfico de Barras (`BarChart`) para Comparação Patrimonial**
+  - *Descrição:* Configurar `CategoryAxis`, `NumberAxis` e `XYChart.Series` para comparar investimentos e quantitativos entre categorias do acervo.
+
+---
+
+## Fase 21 — Padrão GoF Command, Histórico Reversível (Undo / Redo) e Atalhos de Teclado
+- [ ] **Tarefa 21.1: Modelar o Contrato `IComando` e Comandos Reversíveis Autocontidos**
+  - *Descrição:* Criar interface com `executar()`, `desfazer()` e `getDescricao()`, implementando comandos de cadastro, remoção com preservação de índice e alteração de status.
+  - *Guia Relacionado:* `guias/22-padrao-command-undo-redo-e-historico.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploCommandUndoRedoJavaFX.java`
+- [ ] **Tarefa 21.2: Implementar Gerenciador de Histórico com Pilhas Duplas (`Deque`) e Guarda de Memória**
+  - *Descrição:* Orquestrar pilhas `ArrayDeque` para Undo e Redo, limpando Redo a cada nova ação e limitando o tamanho da pilha em memória RAM.
+- [ ] **Tarefa 21.3: Conectar Botões com Data Binding e Atalhos Universais no Palco**
+  - *Descrição:* Conectar `btnDesfazer.disableProperty()` a `podeDesfazerProperty().not()`, e registrar aceleradores `KeyCodeCombination` com `KeyCombination.SHORTCUT_DOWN` para `Ctrl+Z` e `Ctrl+Y`.
+
+---
+
+## Fase 22 — Exportação de Relatórios, Recibos Formatados e Diálogos Nativos (`FileChooser`)
+- [ ] **Tarefa 22.1: Implementar Formatador Textual Monoespaçado Determinístico**
+  - *Descrição:* Construir gerador de comprovantes com molduras divisórias em ASCII, colunas em largura fixa (`String.format`), sumário financeiro com `BigDecimal` e chave criptográfica de integridade SHA-256.
+  - *Guia Relacionado:* `guias/23-exportacao-relatorios-recibos-e-filechooser.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploExportacaoRelatoriosEFileChooserJavaFX.java`
+- [ ] **Tarefa 22.2: Implementar Exportação Tabular em CSV**
+  - *Descrição:* Exportar dados de movimentação em formato delimitado por `;` legível por planilhas e editores com encoding UTF-8.
+- [ ] **Tarefa 22.3: Integrar Diálogo Nativo `FileChooser` com Cancelamento Gracioso**
+  - *Descrição:* Configurar filtros de extensão, sugerir nomes com timestamp, lembrar último diretório e proteger a aplicação contra retornos nulos (`arquivoDestino == null`).
+
+---
+
+## Fase 23 — Resiliência Operacional, Tratamento Global de Falhas e Logs de Diagnóstico
+- [ ] **Tarefa 23.1: Instalar Tratador Global de Falhas (`UncaughtExceptionHandler`)**
+  - *Descrição:* Configurar `Thread.setDefaultUncaughtExceptionHandler` no ponto de entrada da aplicação para interceptar qualquer falha não prevista na JVM.
+  - *Guia Relacionado:* `guias/24-resiliencia-global-uncaught-exceptions-e-logs.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploTratamentoGlobalErrosJavaFX.java`
+- [ ] **Tarefa 23.2: Despachar Diálogo de Erro Expansível na UI Thread**
+  - *Descrição:* Apresentar mensagem amigável para o usuário comum e disponibilizar o rastreamento completo de pilha (Stack Trace) em painel colapsável (`TextArea`), garantindo o despacho via `Platform.runLater()`.
+- [ ] **Tarefa 23.3: Gravar Logs de Diagnóstico em Disco com Auditoria Concorrente**
+  - *Descrição:* Registrar append-only em `app-erros.log` com timestamp ISO-8601, nome da thread causadora, classe da exceção e rastreamento completo para análise pós-morte.
