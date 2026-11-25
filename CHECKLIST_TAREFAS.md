@@ -1,12 +1,13 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **10 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **15 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
 ## 📋 Resumo do Progresso
 - [ ] **Etapa 1: Núcleo de Domínio, Persistência CSV, Inversão de Dependências e Terminal (Fases 1 a 8)**
 - [ ] **Etapa 2: Interface Desktop Gráfica em JavaFX, FXML, Concorrência e Data Binding (Fases 9 e 10)**
+- [ ] **Etapa 3: Padrões Avançados de Engenharia, Java 21 Moderno, Theming, Navegação e Testabilidade (Fases 11 a 15)**
 
 ---
 
@@ -145,3 +146,61 @@
   - *Descrição:* Desenvolver arquivo `styles.css` customizando botões, tabelas e cabeçalhos, e criar script `executar-etapa2.sh`.
 - [ ] **Tarefa 10.7: Gerar tag Git e branch de entrega**
   - *Descrição:* Registrar tag `v2.0-etapa2-javafx` e branch `etapa-2-javafx`.
+
+---
+
+## Fase 11 — Modern Java 21 LTS: Records, Sealed Types e Pattern Matching
+- [ ] **Tarefa 11.1: Modelar DTOs e Value Objects com Records e Construtor Compacto**
+  - *Descrição:* Substituir DTOs verbosos por `record`, aplicando validação de invariantes no construtor compacto e garantindo imutabilidade defensiva profunda.
+  - *Guia Relacionado:* `guias/12-java21-records-pattern-matching-e-sealed-types.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/moderno/ExemploJavaModernoRecordESealed.java`
+- [ ] **Tarefa 11.2: Implementar Hierarquias Seladas (`sealed` interfaces e classes)**
+  - *Descrição:* Fechar a hierarquia de resultados de operações ou estados de negócio com a cláusula `permits`.
+- [ ] **Tarefa 11.3: Tratar resultados com Pattern Matching Switch e Guards (`when`)**
+  - *Descrição:* Substituir cascades de `if/else` ou switches tradicionais com cláusula `default` por avaliação exaustiva de padrões do Java 21.
+
+---
+
+## Fase 12 — Estilização Profissional com CSS, Pseudo-Classes e Temas
+- [ ] **Tarefa 12.1: Eliminar 100% de estilos inline (`setStyle`) dos controladores**
+  - *Descrição:* Migrar todas as regras de formatação, cores e fontes para arquivos `.css` dedicados em `src/main/resources/css/`.
+  - *Guia Relacionado:* `guias/13-javafx-css-seletores-e-temas-dinamicos.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploCssETemasJavaFX.java`
+- [ ] **Tarefa 12.2: Implementar Pseudo-Classes Customizadas em Tabelas**
+  - *Descrição:* Usar `PseudoClass.getPseudoClass(...)` e `node.pseudoClassStateChanged(...)` para indicar atrasos e status dinâmicos em linhas de `TableView`.
+- [ ] **Tarefa 12.3: Implementar Alternância Dinâmica de Temas (Light / Dark Mode)**
+  - *Descrição:* Permitir ao usuário alternar instantaneamente entre `tema-claro.css` e `tema-escuro.css` manipulando `scene.getStylesheets()`.
+
+---
+
+## Fase 13 — Arquitetura de Navegação, Padrão Shell e Diálogos Tipados
+- [ ] **Tarefa 13.1: Implementar o Layout Mestre Shell com Container Dinâmico**
+  - *Descrição:* Estruturar a janela principal em `BorderPane`, mantendo sidebar fixa e trocando o painel `center` sob demanda.
+  - *Guia Relacionado:* `guias/14-javafx-navegacao-e-troca-de-telas.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploNavegacaoJavaFX.java`
+- [ ] **Tarefa 13.2: Implementar Injeção Tipada de Parâmetros entre Controladores**
+  - *Descrição:* Transmitir objetos selecionados entre a visão mestre e a visão de detalhes via método tipado (`inicializarComDados(item)`).
+- [ ] **Tarefa 13.3: Implementar Diálogos Modais Tipados com `Dialog<R>`**
+  - *Descrição:* Substituir modais com estados compartilhados por instâncias de `Dialog<R>` com `setResultConverter` retornando `Optional<R>`.
+
+---
+
+## Fase 14 — Validação Reativa de Formulários e Safe Parsing (UX/UI)
+- [ ] **Tarefa 14.1: Implementar Conversão Segura Preventiva (Safe Parsing)**
+  - *Descrição:* Criar métodos estáticos defensivos que convertem entradas de texto para `BigDecimal` e inteiros retornando `Optional`, prevenindo `NumberFormatException`.
+  - *Guia Relacionado:* `guias/15-javafx-validacao-formularios-e-feedback-visual.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploValidacaoFormularioJavaFX.java`
+- [ ] **Tarefa 14.2: Implementar Feedback Visual Amigável (Pristine vs. Dirty)**
+  - *Descrição:* Validar visualmente os campos apenas após a perda de foco (`focusedProperty()`), evitando telas que nascem todas vermelhas.
+- [ ] **Tarefa 14.3: Conectar Validação Global ao Botão de Submissão**
+  - *Descrição:* Criar `BooleanBinding` composto para manter o botão `Salvar` desabilitado até que todos os campos estejam matematicamente íntegros.
+
+---
+
+## Fase 15 — Testabilidade Arquitetural com Fakes em Memória
+- [ ] **Tarefa 15.1: Criar Repositório Fake em Memória para Testes Unitários**
+  - *Descrição:* Implementar o contrato `IRepositorio` com `ConcurrentHashMap`, permitindo suítes de teste sem I/O de disco.
+  - *Guia Relacionado:* `guias/16-testes-unitarios-e-testabilidade-com-fakes.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/teste/ExemploTestabilidadeComFake.java`
+- [ ] **Tarefa 15.2: Testar Regras de Negócio Críticas em Microssegundos**
+  - *Descrição:* Escrever testes automatizados JUnit 5 cobrindo regras de limites máximos por pessoa, colisões de estado e reversão de operações.

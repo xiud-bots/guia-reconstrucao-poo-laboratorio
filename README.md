@@ -6,16 +6,16 @@
 
 ## 1. Propósito e Filosofia do Repositório
 
-Este repositório foi concebido como um **Master Blueprint (Guia Mestre de Construção e Reconstrução)** para desenvolvedores e estudantes que precisam projetar, implementar ou reconstruir sistemas desktop orientados a objetos em **Java 21 LTS** e **JavaFX**.
+Este repositório foi concebido como um **Master Blueprint (Guia Mestre de Construção e Reconstrução)** para desenvolvedores e estudantes sob direção de `@domaragao` que precisam projetar, implementar ou reconstruir sistemas desktop orientados a objetos em **Java 21 LTS** e **JavaFX**.
 
 ### ⚠️ Regra de Isolamento Pedagógico
 Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 - **Nenhum trecho de código específico do domínio do sistema real está presente neste repositório** (não há classes de acervo de laboratório, itens específicos ou regras de empréstimo do domínio real).
 - O repositório contém **exclusivamente**:
-  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência, critérios de aceitação e armadilhas a evitar.
-  2. **Cadernos Didáticos e Metodológicos (`guias/`)** cobrindo desde modelagem pura e persistência manual em CSV até concorrência em JavaFX, injeção manual de dependências e data binding reativo.
+  1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 15 fases, critérios de aceitação e armadilhas a evitar.
+  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 16 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa e testabilidade com Fakes.
   3. **Exemplos de Código Compiláveis em Java 21 (`src/main/java/...`)** demonstrando a sintaxe e o uso correto das APIs nativas do JDK e OpenJFX.
-  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo e contratos desacoplados.
+  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados e fakes em memória.
 
 ---
 
@@ -24,9 +24,9 @@ Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 ```text
 guia-reconstrucao-poo-laboratorio/
 ├── README.md                      # Visão geral, filosofia e mapa de estudos
-├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão
+├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (15 Fases)
 ├── pom.xml                        # Configuração Maven com Java 21, OpenJFX, JUnit 5 e Plugins
-├── guias/                         # Cadernos conceituais detalhados (11 Guias)
+├── guias/                         # Cadernos conceituais detalhados (16 Guias Didáticos)
 │   ├── 01-modelagem-oo-e-encapsulamento.md
 │   ├── 02-heranca-polimorfismo-e-strategy.md
 │   ├── 03-colecoes-e-defensive-copying.md
@@ -37,37 +37,55 @@ guia-reconstrucao-poo-laboratorio/
 │   ├── 08-javafx-modais-e-caixas-de-dialogo.md
 │   ├── 09-javafx-concorrencia-e-thread-safety.md
 │   ├── 10-arquitetura-camadas-e-injecao-dependencias.md
-│   └── 11-javafx-properties-e-data-binding.md
+│   ├── 11-javafx-properties-e-data-binding.md
+│   ├── 12-java21-records-pattern-matching-e-sealed-types.md
+│   ├── 13-javafx-css-seletores-e-temas-dinamicos.md
+│   ├── 14-javafx-navegacao-e-troca-de-telas.md
+│   ├── 15-javafx-validacao-formularios-e-feedback-visual.md
+│   └── 16-testes-unitarios-e-testabilidade-com-fakes.md
 └── src/
-    ├── main/java/br/edu/ifpb/didatico/exemplos/
-    │   ├── oo/                    # Encapsulamento, validação e invariantes
-    │   │   └── ExemploEncapsulamentoEValidacao.java
-    │   ├── strategy/              # Polimorfismo GoF Strategy
-    │   │   └── ExemploStrategyPolimorfico.java
-    │   ├── colecoes/              # Cópia defensiva e Stream API
-    │   │   └── ExemploColecoesProtegidas.java
-    │   ├── csv/                   # I/O manual com BufferedReader/Writer em UTF-8
-    │   │   └── ExemploLeituraGravacaoCSV.java
-    │   ├── excecao/               # Checked Exceptions de domínio
-    │   │   └── ExemploExcecaoChecada.java
-    │   ├── arquitetura/           # Camadas desacopladas e Pure Dependency Injection
-    │   │   └── ExemploInjecaoDependenciasCamadas.java
-    │   └── javafx/                # Demonstrações de interface rica
-    │       ├── ExemploTabelaEModalJavaFX.java      # TableView, modais e Alerts
-    │       ├── ExemploConcorrenciaJavaFX.java       # Task, Worker Threads e Platform.runLater
-    │       └── ExemploDataBindingJavaFX.java        # Properties, validação reativa e listeners
+    ├── main/
+    │   ├── java/br/edu/ifpb/didatico/exemplos/
+    │   │   ├── oo/                    # Encapsulamento, validação e invariantes
+    │   │   │   └── ExemploEncapsulamentoEValidacao.java
+    │   │   ├── strategy/              # Polimorfismo GoF Strategy
+    │   │   │   └── ExemploStrategyPolimorfico.java
+    │   │   ├── colecoes/              # Cópia defensiva e Stream API
+    │   │   │   └── ExemploColecoesProtegidas.java
+    │   │   ├── csv/                   # I/O manual com BufferedReader/Writer em UTF-8
+    │   │   │   └── ExemploLeituraGravacaoCSV.java
+    │   │   ├── excecao/               # Checked Exceptions de domínio
+    │   │   │   └── ExemploExcecaoChecada.java
+    │   │   ├── arquitetura/           # Camadas desacopladas e Pure Dependency Injection
+    │   │   │   └── ExemploInjecaoDependenciasCamadas.java
+    │   │   ├── moderno/               # Java 21: Records, Sealed Types e Pattern Matching
+    │   │   │   └── ExemploJavaModernoRecordESealed.java
+    │   │   ├── teste/                 # Testabilidade arquitetural com Fake Repository em RAM
+    │   │   │   └── ExemploTestabilidadeComFake.java
+    │   │   └── javafx/                # Demonstrações ricas de interface desktop
+    │   │       ├── ExemploTabelaEModalJavaFX.java        # TableView, modais e Alerts
+    │   │       ├── ExemploConcorrenciaJavaFX.java         # Task, Worker Threads e Platform.runLater
+    │   │       ├── ExemploDataBindingJavaFX.java          # Properties, validação reativa e listeners
+    │   │       ├── ExemploCssETemasJavaFX.java            # PseudoClass e Alternância Light/Dark Mode
+    │   │       ├── ExemploNavegacaoJavaFX.java            # Padrão Shell e Diálogos Tipados Dialog<R>
+    │   │       └── ExemploValidacaoFormularioJavaFX.java  # Safe Parsing e Validação Reativa UX
+    │   └── resources/
+    │       └── css/                   # Estilos visuais e temas desacoplados
+    │           ├── tema-claro.css     # Paleta Light moderna com seletores e pseudo-classes
+    │           └── tema-escuro.css    # Paleta Dark mode profissional
     └── test/java/br/edu/ifpb/didatico/exemplos/
-        └── ExemplosDidaticosTest.java              # Suíte de testes automatizados com JUnit 5
+        └── ExemplosDidaticosTest.java # Bateria com 10 testes automatizados no JUnit 5
 ```
 
 ---
 
-## 3. Roteiro de Reconstrução em 2 Etapas
+## 3. Roteiro de Reconstrução em 3 Etapas
 
 | Etapa | Foco | Objetivos de Aprendizagem |
 | :--- | :--- | :--- |
 | **Etapa 1** | **Modelo Orientado a Objetos Puro & Terminal** | Encapsulamento, validação de invariantes, herança com superclasse abstrata, polimorfismo via padrão Strategy, composição entre entidades, coleções protegidas com `unmodifiableList`, repositórios CSV manuais (`BufferedReader`/`BufferedWriter`), injeção manual de dependências por construtor e exceções de domínio checadas. |
-| **Etapa 2** | **Interface Desktop Gráfica com JavaFX** | Arquitetura MVC desacoplada com arquivos `.fxml`, injeção com `@FXML` e `Initializable`, tabelas `TableView` com células estilizadas, janelas modais (`Modality.APPLICATION_MODAL`), concorrência em UI com `Task<V>` e `Platform.runLater()`, validação reativa com Data Binding e folha de estilos CSS. |
+| **Etapa 2** | **Interface Desktop Gráfica com JavaFX** | Arquitetura MVC desacoplada com arquivos `.fxml`, injeção com `@FXML` e `Initializable`, tabelas `TableView` com células estilizadas, janelas modais (`Modality.APPLICATION_MODAL`), concorrência em UI com `Task<V>` e `Platform.runLater()`, e reatividade com Data Binding. |
+| **Etapa 3** | **Padrões Avançados de Engenharia e Java 21** | Records com construtor compacto, Sealed Types com Pattern Matching Switch e Guards (`when`), Theming dinâmico via CSS com `PseudoClass` (sem `setStyle`), Padrão Shell para navegação sem múltiplas janelas, Diálogos tipados `Dialog<R>`, Safe Parsing preventivo e Testabilidade pura com Fakes em RAM. |
 
 ---
 
@@ -75,7 +93,7 @@ guia-reconstrucao-poo-laboratorio/
 
 1. Abra o arquivo **`CHECKLIST_TAREFAS.md`** e acompanhe a ordem cronológica recomendada.
 2. Para cada fase do checklist:
-   - Leia o guia correspondente na pasta **`guias/`** para absorver a fundamentação teórica, diagramas UML/Mermaid e respostas para bancas avaliadoras.
+   - Leia o caderno conceitual correspondente na pasta **`guias/`** para absorver a fundamentação teórica, diagramas UML/Mermaid e respostas para bancas avaliadoras.
    - Consulte o exemplo compilável correspondente em **`src/main/java/...`** para verificar a sintaxe correta da linguagem Java moderna (Java 21).
    - Execute a suíte de testes unitários para ver como as regras são verificadas de forma automatizada.
    - Escreva o código do seu sistema real aplicando os conceitos aprendidos.
@@ -112,9 +130,34 @@ mvn test
   mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploDataBindingJavaFX"
   ```
 
-### 5.4 Execução das Demonstrações de Terminal
+- **Executar Demonstração de Estilização CSS e Alternância Light/Dark Mode:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploCssETemasJavaFX"
+  ```
+
+- **Executar Demonstração do Padrão Shell, Navegação e Diálogos Tipados (`Dialog<R>`):**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploNavegacaoJavaFX"
+  ```
+
+- **Executar Demonstração de Validação Reativa de Formulários e Safe Parsing:**
+  ```bash
+  mvn javafx:run -Djavafx.mainClass="br.edu.ifpb.didatico.exemplos.javafx.ExemploValidacaoFormularioJavaFX"
+  ```
+
+### 5.4 Execução das Demonstrações de Console / Terminal
 
 - **Demonstração de Injeção de Dependências e Arquitetura em Camadas:**
   ```bash
   mvn exec:java -Dexec.mainClass="br.edu.ifpb.didatico.exemplos.arquitetura.ExemploInjecaoDependenciasCamadas"
+  ```
+
+- **Demonstração de Java 21 Moderno (Records, Sealed Types e Pattern Matching):**
+  ```bash
+  mvn exec:java -Dexec.mainClass="br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed"
+  ```
+
+- **Demonstração de Testabilidade com Repositório Fake em Memória:**
+  ```bash
+  mvn exec:java -Dexec.mainClass="br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake"
   ```

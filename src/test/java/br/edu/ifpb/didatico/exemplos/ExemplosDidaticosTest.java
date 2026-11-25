@@ -11,11 +11,21 @@ import br.edu.ifpb.didatico.exemplos.csv.ExemploLeituraGravacaoCSV;
 import br.edu.ifpb.didatico.exemplos.csv.ExemploLeituraGravacaoCSV.RegistroExemplo;
 import br.edu.ifpb.didatico.exemplos.excecao.ExemploExcecaoChecada.RecursoOcupadoException;
 import br.edu.ifpb.didatico.exemplos.excecao.ExemploExcecaoChecada.VagaEstacionamento;
+import br.edu.ifpb.didatico.exemplos.javafx.ExemploValidacaoFormularioJavaFX.SafeParser;
+import br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed;
+import br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed.MovimentacaoEstoque;
+import br.edu.ifpb.didatico.exemplos.moderno.ExemploJavaModernoRecordESealed.ResultadoValidacao;
 import br.edu.ifpb.didatico.exemplos.oo.ExemploEncapsulamentoEValidacao.ContaCorrenteExemplo;
 import br.edu.ifpb.didatico.exemplos.strategy.ExemploStrategyPolimorfico.Encomenda;
 import br.edu.ifpb.didatico.exemplos.strategy.ExemploStrategyPolimorfico.FreteExpresso;
 import br.edu.ifpb.didatico.exemplos.strategy.ExemploStrategyPolimorfico.FreteGratis;
 import br.edu.ifpb.didatico.exemplos.strategy.ExemploStrategyPolimorfico.FretePadrao;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.IRepositorioRecurso;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.LimiteReservasExcedidoException;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RecursoAuditavel;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RecursoIndisponivelException;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.RepositorioRecursoFakeMemoria;
+import br.edu.ifpb.didatico.exemplos.teste.ExemploTestabilidadeComFake.ServicoReserva;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Bateria de Testes Automatizados para validação dos exemplos conceituais e arquiteturais.
+ * Cobre POO Pura, Strategy, Imutabilidade, CSV, Checked Exceptions, Pure DI,
+ * Recursos Modernos do Java 21 LTS (Records & Sealed), Safe Parsing e Fakes em Memória.
  */
 public class ExemplosDidaticosTest {
 
@@ -123,5 +136,113 @@ public class ExemplosDidaticosTest {
         assertThrows(ProdutoJaCadastradoException.class, () ->
                 servico.cadastrarProduto(new Produto("P1", "Item Duplicado", 50.0))
         );
+    }
+
+    @Test
+    @DisplayName("Guia 12 & Java 21: Deve validar Records com construtor compacto e imutabilidade")
+    void testJava21RecordCompactConstructor() {
+        // Validação de invariantes no construtor compacto
+        assertThrows(IllegalArgumentException.class, () ->
+                new MovimentacaoEstoque(null, 5, BigDecimal.valueOf(100.0)));
+        assertThrows(IllegalArgumentException.class, () ->
+                new MovimentacaoEstoque("IT-1", 0, BigDecimal.valueOf(100.0)));
+        assertThrows(IllegalArgumentException.class, () ->
+                new MovimentacaoEstoque("IT-1", 5, BigDecimal.valueOf(-1.0)));
+
+        MovimentacaoEstoque mov = new MovimentacaoEstoque("IT-1", 4, BigDecimal.valueOf(25.50), List.of("Lote A"), null);
+        assertEquals(0, BigDecimal.valueOf(102.00).compareTo(mov.calcularValorTotal()));
+        assertNotNull(mov.dataHora());
+
+        // Imutabilidade da lista de observações
+        assertThrows(UnsupportedOperationException.class, () -> mov.observacoes().add("Hack"));
+
+        // Pattern matching para instanceof
+        assertTrue(ExemploJavaModernoRecordESealed.ehMovimentacaoDeItem(mov, "IT-1"));
+        assertFalse(ExemploJavaModernoRecordESealed.ehMovimentacaoDeItem(mov, "OUTRO"));
+        assertFalse(ExemploJavaModernoRecordESealed.ehMovimentacaoDeItem("uma string qualquer", "IT-1"));
+    }
+
+    @Test
+    @DisplayName("Guia 12 & Java 21: Deve avaliar Sealed Types com Pattern Matching Switch e Guards")
+    void testJava21SealedSwitchPatternMatching() {
+        ResultadoValidacao aprovado = new ResultadoValidacao.Aprovado("PROT-100", BigDecimal.valueOf(5000.00));
+        ResultadoValidacao reprovadoRecurso = new ResultadoValidacao.ReprovadoRegra("LIMITE", "Excedeu teto", true);
+        ResultadoValidacao reprovadoFinal = new ResultadoValidacao.ReprovadoRegra("FRAUDE", "Bloqueio judicial", false);
+        ResultadoValidacao erro = new ResultadoValidacao.ErroInfraestrutura("Timeout no cluster", 504);
+
+        String msgAprovado = ExemploJavaModernoRecordESealed.formatarResultado(aprovado);
+        assertTrue(msgAprovado.contains("[APROVADO]"));
+        assertTrue(msgAprovado.contains("PROT-100"));
+
+        String msgRecurso = ExemploJavaModernoRecordESealed.formatarResultado(reprovadoRecurso);
+        assertTrue(msgRecurso.contains("[REPROVADO COM RECURSO]"));
+
+        String msgFinal = ExemploJavaModernoRecordESealed.formatarResultado(reprovadoFinal);
+        assertTrue(msgFinal.contains("[REPROVADO DEFINITIVO]"));
+
+        String msgErro = ExemploJavaModernoRecordESealed.formatarResultado(erro);
+        assertTrue(msgErro.contains("[ERRO DE SISTEMA 504]"));
+    }
+
+    @Test
+    @DisplayName("Guia 15 & Validação: SafeParser deve converter moedas e inteiros sem exceções")
+    void testSafeParser() {
+        // Conversão de Moeda
+        Optional<BigDecimal> moeda1 = SafeParser.parseMoeda("1.250,50");
+        assertTrue(moeda1.isPresent());
+        assertEquals(0, new BigDecimal("1250.50").compareTo(moeda1.get()));
+
+        Optional<BigDecimal> moeda2 = SafeParser.parseMoeda("45,00");
+        assertTrue(moeda2.isPresent());
+        assertEquals(0, new BigDecimal("45.00").compareTo(moeda2.get()));
+
+        assertTrue(SafeParser.parseMoeda("invalido").isEmpty());
+        assertTrue(SafeParser.parseMoeda("-10,00").isEmpty());
+        assertTrue(SafeParser.parseMoeda("   ").isEmpty());
+        assertTrue(SafeParser.parseMoeda(null).isEmpty());
+
+        // Conversão de Inteiro Positivo
+        Optional<Integer> qtd1 = SafeParser.parseInteiroPositivo("10");
+        assertTrue(qtd1.isPresent());
+        assertEquals(10, qtd1.get());
+
+        assertTrue(SafeParser.parseInteiroPositivo("0").isEmpty());
+        assertTrue(SafeParser.parseInteiroPositivo("-5").isEmpty());
+        assertTrue(SafeParser.parseInteiroPositivo("abc").isEmpty());
+        assertTrue(SafeParser.parseInteiroPositivo(null).isEmpty());
+    }
+
+    @Test
+    @DisplayName("Guia 16 & Testabilidade: Servico com Repositorio Fake deve validar limites e concorrência")
+    void testTestabilidadeComFakeMemoria() throws RecursoIndisponivelException, LimiteReservasExcedidoException {
+        IRepositorioRecurso repo = new RepositorioRecursoFakeMemoria();
+        repo.salvar(new RecursoAuditavel("REC-01", "Notebook A", null, false));
+        repo.salvar(new RecursoAuditavel("REC-02", "Notebook B", null, false));
+        repo.salvar(new RecursoAuditavel("REC-03", "Projetor", null, false));
+
+        ServicoReserva servico = new ServicoReserva(repo);
+
+        // 1. Aloca 2 recursos com sucesso (limite máximo regulamentar)
+        servico.alocarRecurso("REC-01", "Gabriel");
+        servico.alocarRecurso("REC-02", "Gabriel");
+
+        assertEquals(2, repo.contarPorResponsavel("Gabriel"));
+
+        // 2. Tenta alocar um 3º recurso para a mesma pessoa -> LimiteReservasExcedidoException
+        assertThrows(LimiteReservasExcedidoException.class, () ->
+                servico.alocarRecurso("REC-03", "Gabriel")
+        );
+
+        // 3. Tenta alocar recurso já ocupado para outra pessoa -> RecursoIndisponivelException
+        assertThrows(RecursoIndisponivelException.class, () ->
+                servico.alocarRecurso("REC-01", "OutroUsuario")
+        );
+
+        // 4. Libera um recurso e valida nova alocação permitida
+        servico.liberarRecurso("REC-01");
+        assertEquals(1, repo.contarPorResponsavel("Gabriel"));
+
+        assertDoesNotThrow(() -> servico.alocarRecurso("REC-03", "Gabriel"));
+        assertEquals(2, repo.contarPorResponsavel("Gabriel"));
     }
 }

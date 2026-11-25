@@ -1,0 +1,151 @@
+/* ==========================================================================
+   TEMA ESCURO (DARK THEME) - GUIA DIDÁTICO JAVAFX
+   ========================================================================== */
+
+.root {
+    -fx-font-family: "Segoe UI", "Cantarell", "Ubuntu", -apple-system, sans-serif;
+    -fx-font-size: 13px;
+    -fx-base: #0f172a;
+    -fx-background-color: #0b0f19;
+    -cor-primaria: #3b82f6;
+    -cor-primaria-hover: #60a5fa;
+    -cor-fundo-card: #1e293b;
+    -cor-texto: #f8fafc;
+    -cor-texto-suave: #94a3b8;
+    -cor-borda: #334155;
+    -cor-sucesso-fundo: #064e3b;
+    -cor-sucesso-texto: #6ee7b7;
+    -cor-alerta-fundo: #450a0a;
+    -cor-alerta-texto: #fca5a5;
+}
+
+/* Painéis de fundo e Containers */
+.painel-container {
+    -fx-background-color: #0b0f19;
+    -fx-padding: 20px;
+}
+
+.card-visao {
+    -fx-background-color: -cor-fundo-card;
+    -fx-background-radius: 8px;
+    -fx-border-color: -cor-borda;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 16px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 10, 0, 0, 4);
+}
+
+/* Títulos e Tipografia */
+.titulo-secao {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -cor-texto;
+}
+
+.subtitulo-secao {
+    -fx-font-size: 13px;
+    -fx-text-fill: -cor-texto-suave;
+}
+
+/* Botões Modernos */
+.button {
+    -fx-background-color: #334155;
+    -fx-text-fill: -cor-texto;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 16px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #475569;
+}
+
+.btn-primario {
+    -fx-background-color: -cor-primaria;
+    -fx-text-fill: #0f172a;
+}
+
+.btn-primario:hover {
+    -fx-background-color: -cor-primaria-hover;
+}
+
+.btn-primario:pressed {
+    -fx-background-color: #2563eb;
+}
+
+.btn-toggle-tema {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #0f172a;
+    -fx-font-size: 12px;
+}
+
+.btn-toggle-tema:hover {
+    -fx-background-color: #ffffff;
+}
+
+/* Campos de Entrada */
+.text-field {
+    -fx-background-color: #0f172a;
+    -fx-border-color: -cor-borda;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 12px;
+    -fx-text-fill: -cor-texto;
+}
+
+.text-field:focused {
+    -fx-border-color: -cor-primaria;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.4), 6, 0, 0, 0);
+}
+
+/* Tabela Moderna em Modo Escuro */
+.table-view {
+    -fx-background-color: -cor-fundo-card;
+    -fx-border-color: -cor-borda;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #0f172a;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-text-fill: -cor-texto;
+    -fx-padding: 10px;
+}
+
+.table-row-cell {
+    -fx-background-color: -cor-fundo-card;
+    -fx-border-color: transparent transparent #0f172a transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #172033;
+}
+
+.table-row-cell:filled:selected {
+    -fx-background-color: #1d4ed8;
+    -fx-text-fill: #ffffff;
+}
+
+/* PSEUDO-CLASSES CUSTOMIZADAS */
+.table-row-cell:atrasado {
+    -fx-background-color: -cor-alerta-fundo;
+}
+
+.table-row-cell:atrasado .table-cell {
+    -fx-text-fill: -cor-alerta-texto;
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:disponivel {
+    -fx-background-color: -cor-sucesso-fundo;
+}
+
+.table-row-cell:disponivel .table-cell {
+    -fx-text-fill: -cor-sucesso-texto;
+}
