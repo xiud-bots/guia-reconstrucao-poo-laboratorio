@@ -45,6 +45,15 @@ import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChoo
 import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX.GeradorReciboFormatado;
 import br.edu.ifpb.didatico.exemplos.javafx.ExemploExportacaoRelatoriosEFileChooserJavaFX.ItemMovimentado;
 import br.edu.ifpb.didatico.exemplos.javafx.ExemploTratamentoGlobalErrosJavaFX.TratadorFalhasGlobal;
+import br.edu.ifpb.didatico.exemplos.state.ExemploStateCicloVida.RecursoPatrimonial;
+import br.edu.ifpb.didatico.exemplos.state.ExemploStateCicloVida.TransicaoEstadoInvalidaException;
+import br.edu.ifpb.didatico.exemplos.builder.ExemploBuilderInvariantesEWizard.FichaPatrimonial;
+import br.edu.ifpb.didatico.exemplos.templatemethod.ExemploTemplateMethodImportacaoLote.EquipamentoImportado;
+import br.edu.ifpb.didatico.exemplos.templatemethod.ExemploTemplateMethodImportacaoLote.ImportadorEquipamentosCSV;
+import br.edu.ifpb.didatico.exemplos.templatemethod.ExemploTemplateMethodImportacaoLote.ResultadoImportacao;
+import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.CaretakerPreferencias;
+import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.EstadoJanelaMemento;
+import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.OriginatorJanela;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
@@ -554,5 +563,185 @@ public class ExemplosDidaticosTest {
         assertTrue(conteudoArquivo.contains("Parâmetro de negócio corrompido"));
 
         Files.deleteIfExists(tempLog);
+    }
+
+    @Test
+    @DisplayName("Guia 25 & State: Deve validar ciclo de vida, transições válidas e rejeição de ilegais com FSM")
+    void testPadraoStateCicloVida() throws TransicaoEstadoInvalidaException {
+        RecursoPatrimonial recurso = new RecursoPatrimonial("REC-100", "Osciloscópio Digital");
+        assertEquals("DISPONIVEL", recurso.getEstado().getNomeEstado());
+        assertTrue(recurso.getEstado().permiteEmprestimo());
+        assertFalse(recurso.getEstado().permiteDevolucao());
+
+        // 1. Empréstimo com sucesso
+        recurso.emprestar("Prof. Gabriel");
+        assertEquals("EMPRESTADO", recurso.getEstado().getNomeEstado());
+        assertEquals("Prof. Gabriel", recurso.getResponsavelAtual());
+        assertFalse(recurso.getEstado().permiteEmprestimo());
+        assertTrue(recurso.getEstado().permiteDevolucao());
+
+        // 2. Operações ilegais enquanto emprestado
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.emprestar("Outro"));
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.enviarParaManutencao("Defeito"));
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.baixar("Obsolescência"));
+
+        // 3. Devolução
+        recurso.devolver();
+        assertEquals("DISPONIVEL", recurso.getEstado().getNomeEstado());
+        assertNull(recurso.getResponsavelAtual());
+
+        // 4. Envio para manutenção e conclusão
+        recurso.enviarParaManutencao("Calibração anual");
+        assertEquals("EM_MANUTENCAO", recurso.getEstado().getNomeEstado());
+        assertEquals("Calibração anual", recurso.getUltimoMotivoManutencao());
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.emprestar("Aluno"));
+
+        recurso.concluirManutencao();
+        assertEquals("DISPONIVEL", recurso.getEstado().getNomeEstado());
+
+        // 5. Baixa patrimonial (Estado terminal)
+        recurso.baixar("Inutilização total por descarga elétrica");
+        assertEquals("BAIXADO", recurso.getEstado().getNomeEstado());
+        assertFalse(recurso.getEstado().permiteEmprestimo());
+        assertFalse(recurso.getEstado().permiteDevolucao());
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.emprestar("Tentativa"));
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.devolver());
+        assertThrows(TransicaoEstadoInvalidaException.class, () -> recurso.enviarParaManutencao("Tentar reparar"));
+    }
+
+    @Test
+    @DisplayName("Guia 26 & Builder: Deve construir FichaPatrimonial imutável validando invariantes atômicas")
+    void testPadraoBuilderInvariantes() {
+        // 1. Construção válida com todos os campos
+        FichaPatrimonial ficha = FichaPatrimonial.builder()
+                .comIdentificacao("PAT-2026", "Servidor Rack 2U")
+                .naCategoria("Servidores")
+                .comValor(new BigDecimal("15499.90"))
+                .adquiridoEm(LocalDate.of(2026, 1, 10))
+                .comNumeroSerie("SRV-998877")
+                .alocadoEm("Datacenter Sala 3")
+                .comInspecaoPeriodica(90)
+                .build();
+
+        assertEquals("PAT-2026", ficha.getCodigoPatrimonio());
+        assertEquals("Servidor Rack 2U", ficha.getDescricao());
+        assertEquals("Servidores", ficha.getCategoria());
+        assertEquals(0, new BigDecimal("15499.90").compareTo(ficha.getValorAquisicao()));
+        assertEquals(LocalDate.of(2026, 1, 10), ficha.getDataAquisicao());
+        assertTrue(ficha.getNumeroSerie().isPresent());
+        assertEquals("SRV-998877", ficha.getNumeroSerie().get());
+        assertEquals("Datacenter Sala 3", ficha.getLocalizacaoFisica());
+        assertTrue(ficha.isRequerInspecaoPeriodica());
+        assertEquals(90, ficha.getIntervaloInspecaoDias().orElse(0));
+
+        // 2. Invariantes: Código ausente
+        assertThrows(IllegalStateException.class, () -> FichaPatrimonial.builder()
+                .comIdentificacao("", "Descrição válida")
+                .comValor(BigDecimal.TEN)
+                .build());
+
+        // 3. Invariantes: Descrição ausente
+        assertThrows(IllegalStateException.class, () -> FichaPatrimonial.builder()
+                .comIdentificacao("COD-1", "   ")
+                .comValor(BigDecimal.TEN)
+                .build());
+
+        // 4. Invariantes: Valor negativo
+        assertThrows(IllegalStateException.class, () -> FichaPatrimonial.builder()
+                .comIdentificacao("COD-1", "Descrição")
+                .comValor(new BigDecimal("-1.00"))
+                .build());
+
+        // 5. Invariantes: Data no futuro
+        assertThrows(IllegalStateException.class, () -> FichaPatrimonial.builder()
+                .comIdentificacao("COD-1", "Descrição")
+                .comValor(BigDecimal.TEN)
+                .adquiridoEm(LocalDate.now().plusDays(5))
+                .build());
+
+        // 6. Invariantes: Intervalo de inspeção não positivo
+        assertThrows(IllegalArgumentException.class, () -> FichaPatrimonial.builder()
+                .comInspecaoPeriodica(0));
+    }
+
+    @Test
+    @DisplayName("Guia 27 & Template Method: Deve executar importação em lote resiliente isolando linhas corrompidas")
+    void testPadraoTemplateMethodImportacaoLote() throws IOException {
+        Path tempCsv = Files.createTempFile("teste-importacao-lote-", ".csv");
+        tempCsv.toFile().deleteOnExit();
+
+        // 1 cabeçalho + 2 linhas válidas + 3 linhas inválidas
+        String conteudo = """
+                codigo;descricao;valor;categoria
+                EQ-01;Multímetro Digital;180.50;Eletrônica
+                EQ-02;Fonte de Bancada;450.00;Eletrônica
+                EQ-03;Linha Com Valor Invalido;ABC;Eletrônica
+                EQ-04;Linha Sem Colunas
+                EQ-05;Equipamento Valor Negativo;-50.00;Eletrônica
+                """;
+        Files.writeString(tempCsv, conteudo);
+
+        List<EquipamentoImportado> acervo = new java.util.ArrayList<>();
+        ImportadorEquipamentosCSV importador = new ImportadorEquipamentosCSV(acervo);
+
+        ResultadoImportacao<EquipamentoImportado> resultado = importador.processar(tempCsv, null);
+
+        // Validações do Lote Resiliente
+        assertEquals(5, resultado.totalLinhasProcessadas());
+        assertEquals(2, resultado.totalSucesso());
+        assertEquals(3, resultado.totalFalhas());
+        assertEquals(2, acervo.size());
+        assertEquals(40.0, resultado.taxaAproveitamento(), 0.001);
+
+        // Verifica os erros catalogados com precisão
+        assertEquals(4, resultado.falhas().get(0).numeroLinha());
+        assertTrue(resultado.falhas().get(0).motivo().contains("Valor numérico inválido"));
+
+        assertEquals(5, resultado.falhas().get(1).numeroLinha());
+        assertTrue(resultado.falhas().get(1).motivo().contains("insuficientes"));
+
+        assertEquals(6, resultado.falhas().get(2).numeroLinha());
+        assertTrue(resultado.falhas().get(2).motivo().contains("estritamente positivo"));
+
+        Files.deleteIfExists(tempCsv);
+    }
+
+    @Test
+    @DisplayName("Guia 28 & Memento: Deve capturar snapshot de janela, salvar em properties e restaurar integridade")
+    void testPadraoMementoEPreferencias() throws IOException {
+        Path tempProps = Files.createTempFile("teste-preferencias-", ".properties");
+        tempProps.toFile().deleteOnExit();
+
+        OriginatorJanela originator = new OriginatorJanela();
+        originator.atualizarEstado(250.0, 180.0, 1280.0, 800.0, false, "ESCURO", "/home/gabriel/documentos");
+
+        // 1. Cria Memento
+        EstadoJanelaMemento snapshot = originator.criarMemento();
+        assertEquals(250.0, snapshot.x());
+        assertEquals(1280.0, snapshot.largura());
+        assertEquals("ESCURO", snapshot.temaAtivo());
+        assertEquals("/home/gabriel/documentos", snapshot.ultimoDiretorio());
+
+        // 2. Caretaker persiste snapshot em arquivo .properties
+        CaretakerPreferencias.salvarEmArquivoProperties(tempProps, snapshot);
+        assertTrue(Files.exists(tempProps));
+
+        // 3. Caretaker carrega de volta
+        EstadoJanelaMemento restaurado = CaretakerPreferencias.carregarDeArquivoProperties(tempProps);
+        assertEquals(250.0, restaurado.x());
+        assertEquals(180.0, restaurado.y());
+        assertEquals(1280.0, restaurado.largura());
+        assertEquals(800.0, restaurado.altura());
+        assertFalse(restaurado.maximizado());
+        assertEquals("ESCURO", restaurado.temaAtivo());
+        assertEquals("/home/gabriel/documentos", restaurado.ultimoDiretorio());
+
+        // 4. Originator restaura seu estado a partir do snapshot carregado
+        OriginatorJanela novoOriginator = new OriginatorJanela();
+        novoOriginator.restaurar(restaurado);
+        assertEquals(1280.0, novoOriginator.getLargura());
+        assertEquals("ESCURO", novoOriginator.getTemaAtivo());
+
+        Files.deleteIfExists(tempProps);
     }
 }

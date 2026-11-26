@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **23 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **27 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -10,6 +10,7 @@
 - [ ] **Etapa 3: Padrões Avançados de Engenharia, Java 21 Moderno, Theming, Navegação e Testabilidade (Fases 11 a 15)**
 - [ ] **Etapa 4: Reatividade em Tabelas, Integridade Atômica, Desacoplamento e Regras Temporais (Fases 16 a 19)**
 - [ ] **Etapa 5: Inteligência Visual, Reversibilidade e Resiliência Operacional (Fases 20 a 23)**
+- [ ] **Etapa 6: Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI (Fases 24 a 27)**
 
 ---
 
@@ -302,3 +303,51 @@
   - *Descrição:* Apresentar mensagem amigável para o usuário comum e disponibilizar o rastreamento completo de pilha (Stack Trace) em painel colapsável (`TextArea`), garantindo o despacho via `Platform.runLater()`.
 - [ ] **Tarefa 23.3: Gravar Logs de Diagnóstico em Disco com Auditoria Concorrente**
   - *Descrição:* Registrar append-only em `app-erros.log` com timestamp ISO-8601, nome da thread causadora, classe da exceção e rastreamento completo para análise pós-morte.
+
+---
+
+## Fase 24 — Padrão GoF State e Ciclo de Vida de Entidades de Domínio
+- [ ] **Tarefa 24.1: Modelar a interface de estado `IEstadoRecurso` com métodos default**
+  - *Descrição:* Definir ações do ciclo de vida (`emprestar`, `devolver`, `enviarParaManutencao`, `concluirManutencao`, `baixarPatrimonio`) com rejeição padrão via `TransicaoEstadoInvalidaException`.
+  - *Guia Relacionado:* `guias/25-padrao-state-maquina-de-estados-e-ciclo-de-vida.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/state/ExemploStateCicloVida.java`
+- [ ] **Tarefa 24.2: Implementar Estados Concretos e Entidade de Contexto**
+  - *Descrição:* Criar estados `Disponivel`, `Emprestado`, `EmManutencao` e `Baixado` (terminal), e a entidade de contexto delegando todas as operações para o estado ativo.
+- [ ] **Tarefa 24.3: Conectar a Máquina de Estados a Botões Reativos da UI JavaFX**
+  - *Descrição:* Vincular a habilitação de botões (`btnEmprestar.setDisable(!estado.permiteEmprestimo())`) e badges visuais ao estado da entidade selecionada na `TableView`.
+
+---
+
+## Fase 25 — Padrão GoF Builder, Invariantes e Formulários Wizard
+- [ ] **Tarefa 25.1: Modelar Entidade com Construtor Privado e Builder Estático Aninhado**
+  - *Descrição:* Estruturar classe de domínio com múltiplos atributos (obrigatórios e opcionais) garantindo que ninguém consiga instanciá-la sem passar pelo Builder.
+  - *Guia Relacionado:* `guias/26-padrao-builder-invariantes-e-formularios-wizard.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/builder/ExemploBuilderInvariantesEWizard.java`
+- [ ] **Tarefa 25.2: Implementar Fluent API e Validação Atômica no `.build()`**
+  - *Descrição:* Encadear métodos `.comIdentificacao()`, `.comValor()`, `.alocadoEm()` e validar todas as invariantes e regras de consistência mútua no método `.build()`.
+- [ ] **Tarefa 25.3: Integrar o Builder a Formulários Multi-etapas (*Wizards*) no JavaFX**
+  - *Descrição:* Acumular dados preenchidos em diferentes abas ou telas sequenciais na instância do Builder antes de construir o objeto de domínio de forma atômica no botão de conclusão.
+
+---
+
+## Fase 26 — Padrão GoF Template Method e Processamento em Lote (Batch Import)
+- [ ] **Tarefa 26.1: Criar a Superclasse Abstrata `ImportadorLoteAbstrato<T>`**
+  - *Descrição:* Definir o esqueleto invariante do algoritmo de importação em método `final`, abrindo arquivo, iterando sobre linhas e gerenciando persistência e auditoria.
+  - *Guia Relacionado:* `guias/27-padrao-template-method-e-importacao-em-lote.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/templatemethod/ExemploTemplateMethodImportacaoLote.java`
+- [ ] **Tarefa 26.2: Implementar Hooks Abstratos para Parse e Validação de Domínio**
+  - *Descrição:* Delegar para subclasses especializadas os métodos `validarCabecalho()`, `parseLinha()` e `validarEntidade()`.
+- [ ] **Tarefa 26.3: Coletar Falhas Linha a Linha de Forma Resiliente e Conectar com JavaFX**
+  - *Descrição:* Tratar erros de parsing individuais sem abortar o processamento do restante do arquivo, catalogando `FalhaLinha` e emitindo callbacks para `ProgressBar` em `Task<V>`.
+
+---
+
+## Fase 27 — Padrão GoF Memento, Persistência de Preferências e Sessão de Usuário
+- [ ] **Tarefa 27.1: Modelar o Snapshot Imutável `EstadoJanelaMemento` como Record Java 21**
+  - *Descrição:* Capturar coordenadas (X, Y), largura, altura, estado maximizado, tema ativo e último diretório aberto.
+  - *Guia Relacionado:* `guias/28-padrao-memento-preferencias-e-sessao-javafx.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/memento/ExemploMementoEPreferenciasJavaFX.java`
+- [ ] **Tarefa 27.2: Implementar o `CaretakerPreferencias` Nativo**
+  - *Descrição:* Salvar e restaurar snapshots usando `java.util.prefs.Preferences` da plataforma Java e/ou arquivos `.properties` no diretório do usuário sem bibliotecas externas.
+- [ ] **Tarefa 27.3: Integrar ao Ciclo de Vida do JavaFX (`start()` e `setOnCloseRequest()`)**
+  - *Descrição:* Restaurar layout e tema ao iniciar a aplicação e gravar snapshot automaticamente ao fechar o palco principal.

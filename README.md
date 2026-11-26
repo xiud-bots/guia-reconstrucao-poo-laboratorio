@@ -13,9 +13,9 @@ Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 - **Nenhum trecho de código específico do domínio do sistema real está presente neste repositório** (não há classes de acervo de laboratório, itens específicos ou regras de empréstimo do domínio real).
 - O repositório contém **exclusivamente**:
   1. **Lista de Tarefas Estruturada (`CHECKLIST_TAREFAS.md`)** com ordem de dependência em 23 fases, critérios de aceitação e armadilhas a evitar.
-  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 24 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa, testabilidade com Fakes, reatividade de tabelas com FilteredList/SortedList, persistência atômica com backup e locks, barramento de eventos (EventBus), manipulação temporal com `java.time` e DatePicker, dashboards analíticos com gráficos (PieChart/BarChart), padrão Command com Undo/Redo, exportação de relatórios/recibos formatados com FileChooser e resiliência com UncaughtExceptionHandler global.
+  2. **Cadernos Didáticos e Metodológicos (`guias/`)** com 28 cadernos cobrindo modelagem pura, persistência manual CSV, JavaFX completo, concorrência, data binding reativo, Java 21 moderno (Records e Sealed Types), theming CSS, navegação com padrão Shell, validação reativa, testabilidade com Fakes, reatividade de tabelas com FilteredList/SortedList, persistência atômica com backup e locks, barramento de eventos (EventBus), manipulação temporal com `java.time` e DatePicker, dashboards analíticos com gráficos (PieChart/BarChart), padrão Command com Undo/Redo, exportação de relatórios/recibos formatados com FileChooser, resiliência com UncaughtExceptionHandler global, máquina de estados finita com padrão State, construção segura com padrão Builder e Wizards, importação resiliente em lote com Template Method e persistência de preferências de sessão com padrão Memento.
   3. **Exemplos de Código Compiláveis em Java 21 (`src/main/java/...`)** demonstrando a sintaxe e o uso correto das APIs nativas do JDK e OpenJFX.
-  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados, persistência atômica, eventos tipados, regras temporais, fakes em memória, agregações analíticas, padrão Command e tratamento global de falhas (17 testes automatizados).
+  4. **Suíte de Testes Automatizados (`src/test/java/...`)** com JUnit 5 validando invariantes, imutabilidade, polimorfismo, contratos desacoplados, persistência atômica, eventos tipados, regras temporais, fakes em memória, agregações analíticas, padrão Command, resiliência global, máquina de estados finita, builder com invariantes atômicas, importação em lote e preferências com Memento (21 testes automatizados).
 
 ---
 
@@ -24,9 +24,9 @@ Seguindo as melhores práticas pedagógicas e as diretrizes estabelecidas:
 ```text
 guia-reconstrucao-poo-laboratorio/
 ├── README.md                      # Visão geral, filosofia e mapa de estudos
-├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (23 Fases)
+├── CHECKLIST_TAREFAS.md           # Roteiro passo a passo com critérios de conclusão (27 Fases)
 ├── pom.xml                        # Configuração Maven com Java 21, OpenJFX, JUnit 5 e Plugins
-├── guias/                         # Cadernos conceituais detalhados (24 Guias Didáticos)
+├── guias/                         # Cadernos conceituais detalhados (28 Guias Didáticos)
 │   ├── 01-modelagem-oo-e-encapsulamento.md
 │   ├── 02-heranca-polimorfismo-e-strategy.md
 │   ├── 03-colecoes-e-defensive-copying.md
@@ -50,7 +50,11 @@ guia-reconstrucao-poo-laboratorio/
 │   ├── 21-javafx-dashboards-metricas-e-graficos.md
 │   ├── 22-padrao-command-undo-redo-e-historico.md
 │   ├── 23-exportacao-relatorios-recibos-e-filechooser.md
-│   └── 24-resiliencia-global-uncaught-exceptions-e-logs.md
+│   ├── 24-resiliencia-global-uncaught-exceptions-e-logs.md
+│   ├── 25-padrao-state-maquina-de-estados-e-ciclo-de-vida.md
+│   ├── 26-padrao-builder-invariantes-e-formularios-wizard.md
+│   ├── 27-padrao-template-method-e-importacao-em-lote.md
+│   └── 28-padrao-memento-preferencias-e-sessao-javafx.md
 └── src/
     ├── main/
     │   ├── java/br/edu/ifpb/didatico/exemplos/
@@ -71,6 +75,14 @@ guia-reconstrucao-poo-laboratorio/
     │   │   │   └── ExemploJavaModernoRecordESealed.java
     │   │   ├── teste/                 # Testabilidade arquitetural com Fake Repository em RAM
     │   │   │   └── ExemploTestabilidadeComFake.java
+    │   │   ├── state/                 # Máquina de estados finita GoF State
+    │   │   │   └── ExemploStateCicloVida.java
+    │   │   ├── builder/               # GoF Builder imutável com invariantes atômicas
+    │   │   │   └── ExemploBuilderInvariantesEWizard.java
+    │   │   ├── templatemethod/        # GoF Template Method para processamento em lote
+    │   │   │   └── ExemploTemplateMethodImportacaoLote.java
+    │   │   ├── memento/               # GoF Memento e persistência de sessão/preferências
+    │   │   │   └── ExemploMementoEPreferenciasJavaFX.java
     │   │   └── javafx/                # Demonstrações ricas de interface desktop
     │   │       ├── ExemploTabelaEModalJavaFX.java               # TableView, modais e Alerts
     │   │       ├── ExemploConcorrenciaJavaFX.java                # Task, Worker Threads e Platform.runLater
@@ -90,12 +102,12 @@ guia-reconstrucao-poo-laboratorio/
     │           ├── tema-claro.css     # Paleta Light moderna com seletores e pseudo-classes
     │           └── tema-escuro.css    # Paleta Dark mode profissional
     └── test/java/br/edu/ifpb/didatico/exemplos/
-        └── ExemplosDidaticosTest.java # Bateria com 17 testes automatizados no JUnit 5
+        └── ExemplosDidaticosTest.java # Bateria com 21 testes automatizados no JUnit 5
 ```
 
 ---
 
-## 3. Roteiro de Reconstrução em 5 Etapas
+## 3. Roteiro de Reconstrução em 6 Etapas
 
 | Etapa | Foco | Objetivos de Aprendizagem |
 | :--- | :--- | :--- |
@@ -104,6 +116,7 @@ guia-reconstrucao-poo-laboratorio/
 | **Etapa 3** | **Padrões Avançados de Engenharia e Java 21** | Records com construtor compacto, Sealed Types com Pattern Matching Switch e Guards (`when`), Theming dinâmico via CSS com `PseudoClass` (sem `setStyle`), Padrão Shell para navegação sem múltiplas janelas, Diálogos tipados `Dialog<R>`, Safe Parsing preventivo e Testabilidade pura com Fakes em RAM. |
 | **Etapa 4** | **Reatividade, Integridade Atômica e Desacoplamento** | Pipeline reativo com `FilteredList` e `SortedList`, botões de ação em linhas de tabelas, gravação atômica com `Files.move(..., ATOMIC_MOVE)` e backup `.bak`, concorrência com `ReentrantReadWriteLock`, EventBus centralizado em memória e manipulação moderna de datas (`java.time`) com `DatePicker` brasileiro e bloqueio via `DayCellFactory`. |
 | **Etapa 5** | **Inteligência Visual, Reversibilidade e Resiliência Operacional** | Dashboards executivos com `PieChart` e `BarChart`, agregações com Java Streams (`groupingBy`, `counting`, `reducing`), Padrão GoF Command com pilhas reversíveis de Undo/Redo e atalhos de teclado (`Ctrl+Z`/`Ctrl+Y`), exportação de recibos tabulares monoespaçados com hash de validação SHA-256 e `FileChooser` nativo, e proteção de resiliência com `UncaughtExceptionHandler` global e gravação append-only em `app-erros.log`. |
+| **Etapa 6** | **Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI** | Padrão GoF State com ciclo de vida tipado e rejeição de transições ilegais, Padrão GoF Builder com validação de invariantes no `.build()` para formulários multi-etapas (*Wizards*), Padrão GoF Template Method para processamento e importação em lote resiliente com isolamento de falhas por linha, e Padrão GoF Memento com persistência nativa de sessão, dimensões de janela e preferências do usuário (`java.util.prefs.Preferences`). |
 
 ---
 
