@@ -73,6 +73,24 @@ import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.Adap
 import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.IItemCatalogoLocal;
 import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.ImportadorFeedLegado;
 import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.LegacyVendorItemDTO;
+import br.edu.ifpb.didatico.exemplos.facade.ExemploFacadeSubsistemasDesktop.ComprovanteAlocacao;
+import br.edu.ifpb.didatico.exemplos.facade.ExemploFacadeSubsistemasDesktop.FalhaAlocacaoException;
+import br.edu.ifpb.didatico.exemplos.facade.ExemploFacadeSubsistemasDesktop.GestaoAlocacaoFacade;
+import br.edu.ifpb.didatico.exemplos.facade.ExemploFacadeSubsistemasDesktop.SolicitacaoAlocacao;
+import br.edu.ifpb.didatico.exemplos.mediator.ExemploMediatorFormularioJavaFX.DecisaoMediator;
+import br.edu.ifpb.didatico.exemplos.mediator.ExemploMediatorFormularioJavaFX.EventoFormulario;
+import br.edu.ifpb.didatico.exemplos.mediator.ExemploMediatorFormularioJavaFX.FormularioAlocacaoMediator;
+import br.edu.ifpb.didatico.exemplos.mediator.ExemploMediatorFormularioJavaFX.OpcaoPrazo;
+import br.edu.ifpb.didatico.exemplos.mediator.ExemploMediatorFormularioJavaFX.TipoSolicitante;
+import br.edu.ifpb.didatico.exemplos.proxy.ExemploProxyLazyLoadingECache.FalhaCargaDocumentoException;
+import br.edu.ifpb.didatico.exemplos.proxy.ExemploProxyLazyLoadingECache.IRecursoDocumental;
+import br.edu.ifpb.didatico.exemplos.proxy.ExemploProxyLazyLoadingECache.ProxyDocumentoVirtual;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.CatalogoRecursosDominio;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.EventoDominio;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.IObservadorDominio;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.PonteReativaJavaFX;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.RecursoEsgotadoException;
+import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.TipoEventoDominio;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
@@ -96,6 +114,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -913,5 +932,166 @@ public class ExemplosDidaticosTest {
         assertEquals(0, new BigDecimal("35.00").compareTo(adaptados.get(0).getPrecoEstimado()));
         assertTrue(adaptados.get(0).isDisponivel());
         assertFalse(adaptados.get(2).isDisponivel());
+    }
+
+    @Test
+    @DisplayName("Guia 33 & Facade: Deve orquestrar alocação completa através de subsistemas e suportar compensação")
+    void testPadraoFacadeSubsistemasDesktop() throws FalhaAlocacaoException {
+        GestaoAlocacaoFacade facade = new GestaoAlocacaoFacade();
+
+        // 1. Alocação bem-sucedida para usuário ativo e equipamento livre
+        SolicitacaoAlocacao reqValida = new SolicitacaoAlocacao("USR-01", "EQP-101", 10, "Pesquisa IA");
+        ComprovanteAlocacao comprovante = facade.efetivarAlocacaoCompleta(reqValida);
+
+        assertNotNull(comprovante);
+        assertTrue(comprovante.idTransacao().startsWith("TX-"));
+        assertEquals("USR-01", comprovante.codigoUsuario());
+        assertEquals("Gabriel Aragão", comprovante.nomeUsuario());
+        assertEquals("EQP-101", comprovante.codigoRecurso());
+        assertEquals(LocalDate.now(), comprovante.dataInicio());
+        assertEquals(LocalDate.now().plusDays(10), comprovante.dataPrevistaDevolucao());
+        assertNotNull(comprovante.hashSeguranca());
+        assertEquals(64, comprovante.hashSeguranca().length()); // Hash SHA-256
+
+        // Recurso agora deve constar como indisponível no estoque
+        var itemAlocado = facade.obterRecursosCadastrados().stream()
+                .filter(i -> i.getCodigo().equals("EQP-101"))
+                .findFirst().orElseThrow();
+        assertFalse(itemAlocado.isDisponivel());
+
+        // Notificação e Auditoria devem conter registros
+        assertTrue(facade.getServicoNotificacao().getMensagensEnviadas().stream()
+                .anyMatch(msg -> msg.contains("USR-01") && msg.contains("Alocação Confirmada")));
+        assertTrue(facade.obterTrilhaAuditoria().stream()
+                .anyMatch(log -> log.contains("ALOCACAO_RECURSO") && log.contains("EQP-101")));
+
+        // 2. Tentativa com usuário suspenso/inadimplente -> Deve falhar com SUBSYS_USR_SUSPENSO
+        SolicitacaoAlocacao reqSuspenso = new SolicitacaoAlocacao("USR-03", "EQP-102", 5, "Projeto");
+        FalhaAlocacaoException exSuspenso = assertThrows(FalhaAlocacaoException.class,
+                () -> facade.efetivarAlocacaoCompleta(reqSuspenso));
+        assertEquals("SUBSYS_USR_SUSPENSO", exSuspenso.getCodigoEtapa());
+
+        // 3. Tentativa com recurso já alocado -> Deve falhar com SUBSYS_EST_INDISPONIVEL
+        SolicitacaoAlocacao reqIndisponivel = new SolicitacaoAlocacao("USR-02", "EQP-101", 3, "Projeto");
+        FalhaAlocacaoException exIndisp = assertThrows(FalhaAlocacaoException.class,
+                () -> facade.efetivarAlocacaoCompleta(reqIndisponivel));
+        assertEquals("SUBSYS_EST_INDISPONIVEL", exIndisp.getCodigoEtapa());
+
+        // 4. Cancelamento com estorno -> Recurso volta ao estoque
+        facade.cancelarAlocacaoComEstorno("EQP-101", "USR-01", "Devolução antecipada");
+        assertTrue(itemAlocado.isDisponivel());
+    }
+
+    @Test
+    @DisplayName("Guia 34 & Mediator: Deve coordenar interdependências entre múltiplos controles desacoplados")
+    void testPadraoMediatorFormularioJavaFX() {
+        // 1. Estado Inicial: Estudante, não especializado, sem orientador, termo não aceito -> Inválido
+        DecisaoMediator d1 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.ESTUDANTE, false, "", OpcaoPrazo.DIAS_7, false);
+        assertFalse(d1.valido());
+        assertEquals(2, d1.prazosPermitidos().size()); // Estudante tem apenas opções de 3 e 7 dias
+        assertFalse(d1.exigeVinculo());
+        assertFalse(d1.avisoOrientadorVisivel());
+        assertTrue(d1.mensagemFeedback().contains("Termo de Responsabilidade"));
+
+        // 2. Aceita o termo -> Como equipamento não é especializado, orientador é opcional -> Válido!
+        DecisaoMediator d2 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.ESTUDANTE, false, "", OpcaoPrazo.DIAS_7, true);
+        assertTrue(d2.valido());
+        assertTrue(d2.mensagemFeedback().contains("sucesso"));
+
+        // 3. Marca equipamento especializado -> Exige matrícula do orientador para estudante!
+        DecisaoMediator d3 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.ESTUDANTE, true, "", OpcaoPrazo.DIAS_7, true);
+        assertFalse(d3.valido()); // Agora tornou-se inválido porque vínculo está vazio
+        assertTrue(d3.exigeVinculo());
+        assertTrue(d3.avisoOrientadorVisivel());
+        assertTrue(d3.mensagemFeedback().contains("orientador"));
+
+        // 4. Preenche matrícula do orientador -> Válido novamente
+        DecisaoMediator d4 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.ESTUDANTE, true, "PROF-1020", OpcaoPrazo.DIAS_7, true);
+        assertTrue(d4.valido());
+
+        // 5. Muda perfil para PROFESSOR -> Orientador não é obrigatório e prazos aumentam
+        DecisaoMediator d5 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.PROFESSOR, false, "", OpcaoPrazo.DIAS_30, true);
+        assertTrue(d5.valido());
+        assertEquals(3, d5.prazosPermitidos().size()); // 7, 15 e 30 dias liberados para docentes
+        assertFalse(d5.exigeVinculo());
+        assertFalse(d5.avisoOrientadorVisivel());
+
+        // 6. Pesquisador Visitante -> Exige acordo/convênio
+        DecisaoMediator d6 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.PESQUISADOR_VISITANTE, false, "", OpcaoPrazo.DIAS_15, true);
+        assertFalse(d6.valido());
+        assertTrue(d6.exigeVinculo());
+        assertTrue(d6.mensagemFeedback().contains("Acordo"));
+
+        DecisaoMediator d7 = FormularioAlocacaoMediator.avaliar(TipoSolicitante.PESQUISADOR_VISITANTE, false, "CONV-2026/01", OpcaoPrazo.DIAS_15, true);
+        assertTrue(d7.valido());
+    }
+
+    @Test
+    @DisplayName("Guia 35 & Proxy: Deve realizar carregamento lazy sob demanda e responder instantaneamente via cache")
+    void testPadraoProxyLazyLoadingECache() throws FalhaCargaDocumentoException {
+        ProxyDocumentoVirtual proxy = new ProxyDocumentoVirtual(
+                "DOC-TEST-500", "Manual Técnico Espectrômetro de Massa", "Química Analítica", 7800
+        );
+
+        // 1. Antes de chamar obterConteudoIntegral(): metadados leves funcionam sem carregar o objeto pesado
+        assertFalse(proxy.isCarregadoEmMemoria());
+        assertEquals("DOC-TEST-500", proxy.getIdentificador());
+        assertEquals("Manual Técnico Espectrômetro de Massa", proxy.getTitulo());
+        assertEquals(7800, proxy.getTamanhoEstimadoKb());
+
+        // 2. Primeira chamada: aciona o Lazy Loading materializando o objeto real
+        String payload1 = proxy.obterConteudoIntegral();
+        assertTrue(proxy.isCarregadoEmMemoria());
+        assertNotNull(payload1);
+        assertTrue(payload1.contains("MANUAL TÉCNICO OFICIAL DE CALIBRAÇÃO"));
+        assertNotNull(proxy.obterDigestSha256());
+        assertEquals(64, proxy.obterDigestSha256().length());
+
+        // 3. Segunda chamada: responde do cache transparente sem novo I/O
+        String payload2 = proxy.obterConteudoIntegral();
+        assertSame(payload1, payload2); // Mesma referência de String mantida no cache
+        assertEquals(0, proxy.getTempoUltimaCargaMs(), "Chamada de cache deve ter latência zero");
+
+        // 4. Invalidação de cache: volta ao estado leve
+        proxy.invalidarCache();
+        assertFalse(proxy.isCarregadoEmMemoria());
+    }
+
+    @Test
+    @DisplayName("Guia 36 & Observer: Deve emitir eventos de domínio puro e propagar para observadores e ponte reativa")
+    void testPadraoObserverDominioEPonteJavaFX() throws RecursoEsgotadoException {
+        CatalogoRecursosDominio catalogo = new CatalogoRecursosDominio();
+
+        // 1. Observador Puro de Auditoria (Zero dependências de UI)
+        List<EventoDominio> eventosCapturados = new java.util.ArrayList<>();
+        IObservadorDominio observadorPuro = eventosCapturados::add;
+        catalogo.registrarObservador(observadorPuro);
+
+        // 2. Aloca recurso: Osciloscópio OSC-100 (possui 3 unidades)
+        catalogo.alocarRecurso("OSC-100", "Gabriel");
+        assertEquals(1, eventosCapturados.size());
+        assertEquals(TipoEventoDominio.ALOCACAO_CONCLUIDA, eventosCapturados.get(0).tipo());
+        assertEquals("OSC-100", eventosCapturados.get(0).codigoRecurso());
+        assertEquals("Gabriel", eventosCapturados.get(0).autorTransacao());
+
+        // 3. Aloca a 2ª unidade de OSC-100 -> Quantidade cai para 1 (Estoque Crítico!)
+        catalogo.alocarRecurso("OSC-100", "Ana");
+        // Deve emitir ALOCACAO_CONCLUIDA e ALERTA_ESTOQUE_CRITICO
+        assertEquals(3, eventosCapturados.size());
+        assertEquals(TipoEventoDominio.ALOCACAO_CONCLUIDA, eventosCapturados.get(1).tipo());
+        assertEquals(TipoEventoDominio.ALERTA_ESTOQUE_CRITICO, eventosCapturados.get(2).tipo());
+
+        // 4. Devolve recurso
+        catalogo.devolverRecurso("OSC-100", "Gabriel");
+        assertEquals(4, eventosCapturados.size());
+        assertEquals(TipoEventoDominio.DEVOLUCAO_CONCLUIDA, eventosCapturados.get(3).tipo());
+
+        // 5. Testa conexão com a Ponte Reativa JavaFX
+        PonteReativaJavaFX ponte = new PonteReativaJavaFX();
+        catalogo.registrarObservador(ponte);
+
+        catalogo.cadastrarNovoItem("EST-500", "Estação Térmica Digital", 4, "Coordenação");
+        assertTrue(ponte.totalTransacoesProperty().get() >= 1);
+        assertEquals("EST-500", ponte.getEventosObservable().get(0).codigoRecurso());
     }
 }

@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **31 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **35 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -12,6 +12,7 @@
 - [ ] **Etapa 5: Inteligência Visual, Reversibilidade e Resiliência Operacional (Fases 20 a 23)**
 - [ ] **Etapa 6: Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI (Fases 24 a 27)**
 - [ ] **Etapa 7: Estruturação Hierárquica, Extensibilidade Dinâmica, Pipelines de Regras e Interoperabilidade (Fases 28 a 31)**
+- [ ] **Etapa 8: Orquestração de Subsistemas, Mediação de Telas, Recursos Virtuais e Observabilidade de Domínio (Fases 32 a 35)**
 
 ---
 
@@ -400,3 +401,51 @@
   - *Descrição:* Encapsular `LegacyVendorItemDTO`, convertendo códigos primitivos, sanitizando texto, traduzindo centavos para `BigDecimal` e mapeando flags numéricas para booleanos.
 - [ ] **Tarefa 31.3: Conectar Catálogo Adaptado à `TableView` do JavaFX**
   - *Descrição:* Exibir os dados legados adaptados na tabela consumindo exclusivamente o contrato canônico, preservando o isolamento arquitetural da interface gráfica.
+
+---
+
+## Fase 32 — Padrão GoF Facade e Orquestração de Subsistemas Desktop
+- [ ] **Tarefa 32.1: Modelar Interfaces e Contratos dos Subsistemas Independentes**
+  - *Descrição:* Estruturar subsistemas autônomos para Validação de Usuário, Inventário/Estoque, Prazos/Regras, Auditoria Criptográfica SHA-256 e Notificação Digital.
+  - *Guia Relacionado:* `guias/33-padrao-facade-fachada-de-subsistemas-e-gateway-desktop.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/facade/ExemploFacadeSubsistemasDesktop.java`
+- [ ] **Tarefa 32.2: Implementar a Fachada `GestaoAlocacaoFacade` com Compensação Transacional (Rollback)**
+  - *Descrição:* Desenvolver ponto de entrada unificado que orquestra a sequência de alocação e estorna a reserva no estoque caso etapas subsequentes falhem.
+- [ ] **Tarefa 32.3: Integrar Ponto de Entrada Único ao Formulário Transacional JavaFX**
+  - *Descrição:* Conectar o controlador JavaFX à Fachada através de uma única invocação de método, exibindo recibo consolidado e logs em tempo real.
+
+---
+
+## Fase 33 — Padrão GoF Mediator e Desacoplamento de Controles em Telas Complexas
+- [ ] **Tarefa 33.1: Modelar Contrato `IFormularioMediator` e Eventos de Interface**
+  - *Descrição:* Criar enum `EventoFormulario` e interface `IFormularioMediator` para centralizar as notificações entre widgets visuais.
+  - *Guia Relacionado:* `guias/34-padrao-mediator-orquestracao-de-componentes-javafx.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/mediator/ExemploMediatorFormularioJavaFX.java`
+- [ ] **Tarefa 33.2: Implementar `FormularioAlocacaoMediator` com Regras Centralizadas e Proteção Anti-Loop**
+  - *Descrição:* Centralizar regras de visibilidade, habilitação e prazos baseadas em perfil de solicitante (Estudante, Professor, Pesquisador) e flag booleana de atualização atômica.
+- [ ] **Tarefa 33.3: Conectar Controles JavaFX (`ComboBox`, `CheckBox`, `TextField`, `Button`) ao Mediator**
+  - *Descrição:* Vincular eventos de UI ao método `mediator.notificar(origem, evento)` garantindo que nenhum nó conheça referências dos demais.
+
+---
+
+## Fase 34 — Padrão GoF Proxy, Lazy Loading e Caching Transparente de Recursos
+- [ ] **Tarefa 34.1: Definir a Interface Canônica do Sujeito `IRecursoDocumental`**
+  - *Descrição:* Declarar métodos para metadados leves (`getId()`, `getTitulo()`, `getTamanhoKb()`) e operações pesadas de I/O (`obterConteudoIntegral()`).
+  - *Guia Relacionado:* `guias/35-padrao-proxy-lazy-loading-e-cache-de-recursos.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/proxy/ExemploProxyLazyLoadingECache.java`
+- [ ] **Tarefa 34.2: Implementar Objeto Real Pesado e `ProxyDocumentoVirtual` com Double-Checked Locking**
+  - *Descrição:* Desenvolver proxy thread-safe com variável `volatile` que materializa o objeto real sob demanda na primeira chamada e atende requisições subsequentes via cache instantâneo (0 ms).
+- [ ] **Tarefa 34.3: Conectar Proxies à `TableView` JavaFX com Carregamento Sob Demanda em `Task<V>`**
+  - *Descrição:* Exibir catálogo com consumo mínimo de memória RAM inicial e acionar Lazy Loading em segundo plano via `Task<V>` sem congelar a UI Thread.
+
+---
+
+## Fase 35 — Padrão GoF Observer Puro e Ponte Reativa com JavaFX (Clean Architecture)
+- [ ] **Tarefa 35.1: Modelar Contratos de Domínio Puro (`ISujeitoDominio`, `IObservadorDominio`, `EventoDominio`)**
+  - *Descrição:* Estruturar padrão Observer clássico no núcleo de negócio com zero dependências de pacotes gráficos (`javafx.*`).
+  - *Guia Relacionado:* `guias/36-padrao-observer-dominio-e-ponte-reativa-javafx.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/observer/ExemploObserverDominioEPonteJavaFX.java`
+- [ ] **Tarefa 35.2: Implementar o Gerenciador de Domínio com Regras e Alertas de Estoque Crítico**
+  - *Descrição:* Desenvolver operações puras de alocação, devolução e emissão de eventos tipados armazenados em lista thread-safe (`CopyOnWriteArrayList`).
+- [ ] **Tarefa 35.3: Desenvolver a `PonteReativaJavaFX` com Despacho Seguro via `Platform.runLater()`**
+  - *Descrição:* Construir adaptador na camada de apresentação que implementa `IObservadorDominio` e atualiza `ObservableList` e propriedades visuais na UI Thread sem riscos de concorrência.
