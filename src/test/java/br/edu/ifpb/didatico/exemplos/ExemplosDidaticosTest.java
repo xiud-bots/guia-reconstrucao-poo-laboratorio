@@ -91,6 +91,28 @@ import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX
 import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.PonteReativaJavaFX;
 import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.RecursoEsgotadoException;
 import br.edu.ifpb.didatico.exemplos.observer.ExemploObserverDominioEPonteJavaFX.TipoEventoDominio;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.AmbienteCorporativoFactory;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.AmbienteEducacionalFactory;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.AmbienteIndustrialFactory;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.IAmbienteOperacionalFactory;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.ICalculadoraTarifa;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.IPoliticaSeguranca;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.ParecerConformidade;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.ProvedorFabricaAmbiente;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.RequisicaoAlocacao;
+import br.edu.ifpb.didatico.exemplos.factory.ExemploAbstractFactoryETemasAmbiente.TipoAmbiente;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.EquipamentoHardware;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.IItemPatrimonial;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.LicencaSoftware;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.MobiliarioPatrimonial;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.VisitorAuditoriaConformidade;
+import br.edu.ifpb.didatico.exemplos.visitor.ExemploVisitorOperacoesPolimorficas.VisitorCalculoDepreciacao;
+import br.edu.ifpb.didatico.exemplos.flyweight.ExemploFlyweightOtimizacaoMemoria.EspecificacaoEquipamentoFlyweight;
+import br.edu.ifpb.didatico.exemplos.flyweight.ExemploFlyweightOtimizacaoMemoria.FlyweightEspecificacaoFactory;
+import br.edu.ifpb.didatico.exemplos.flyweight.ExemploFlyweightOtimizacaoMemoria.ItemInventarioContexto;
+import br.edu.ifpb.didatico.exemplos.iterator.ExemploIteratorPaginacaoVirtualJavaFX.IPaginadorIterator;
+import br.edu.ifpb.didatico.exemplos.iterator.ExemploIteratorPaginacaoVirtualJavaFX.PaginadorVirtualMemoria;
+import br.edu.ifpb.didatico.exemplos.iterator.ExemploIteratorPaginacaoVirtualJavaFX.RegistroAcervoVirtual;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
@@ -1093,5 +1115,210 @@ public class ExemplosDidaticosTest {
         catalogo.cadastrarNovoItem("EST-500", "Estação Térmica Digital", 4, "Coordenação");
         assertTrue(ponte.totalTransacoesProperty().get() >= 1);
         assertEquals("EST-500", ponte.getEventosObservable().get(0).codigoRecurso());
+    }
+
+    @Test
+    @DisplayName("Guia 37 & Abstract Factory: Deve produzir famílias coesas de regras e componentes desacoplados")
+    void testPadraoAbstractFactoryETemasAmbiente() {
+        RequisicaoAlocacao req1 = new RequisicaoAlocacao("REQ-01", "OSC-10", "Osciloscópio Digital", 10, true);
+        RequisicaoAlocacao reqExcesso = new RequisicaoAlocacao("REQ-02", "GER-20", "Gerador RF", 25, true);
+        RequisicaoAlocacao reqSemNr = new RequisicaoAlocacao("REQ-03", "PRE-50", "Prensa Hidráulica", 5, false);
+
+        BigDecimal baseDiaria = new BigDecimal("100.00");
+
+        // 1. Família Educacional
+        IAmbienteOperacionalFactory fabEdu = ProvedorFabricaAmbiente.obterFabrica(TipoAmbiente.EDUCACIONAL);
+        assertTrue(fabEdu instanceof AmbienteEducacionalFactory);
+        assertEquals("Acadêmico / IFPB", fabEdu.getNomeAmbiente());
+
+        // Tarifa com 50% de desconto institucional: 10 dias * 100 * 0.50 = 500.00
+        BigDecimal custoEdu = fabEdu.criarCalculadora().calcularCustoTotal(10, baseDiaria);
+        assertEquals(new BigDecimal("500.00"), custoEdu);
+
+        // Parecer dentro do limite de 15 dias -> Aprovado
+        ParecerConformidade parecerEduOk = fabEdu.criarPoliticaSeguranca().avaliarRequisicao(req1);
+        assertTrue(parecerEduOk.aprovado());
+
+        // Parecer acima de 15 dias -> Reprovado
+        ParecerConformidade parecerEduExcesso = fabEdu.criarPoliticaSeguranca().avaliarRequisicao(reqExcesso);
+        assertFalse(parecerEduExcesso.aprovado());
+        assertTrue(parecerEduExcesso.justificativa().contains("limite acadêmico"));
+
+        // 2. Família Corporativa
+        IAmbienteOperacionalFactory fabCorp = ProvedorFabricaAmbiente.obterFabrica(TipoAmbiente.CORPORATIVO);
+        assertTrue(fabCorp instanceof AmbienteCorporativoFactory);
+
+        // Tarifa comercial com 15% SLA: 10 dias * 100 * 1.15 = 1150.00
+        BigDecimal custoCorp = fabCorp.criarCalculadora().calcularCustoTotal(10, baseDiaria);
+        assertEquals(new BigDecimal("1150.00"), custoCorp);
+
+        // Limite corporativo é de 30 dias -> reqExcesso (25 dias) é aprovado
+        ParecerConformidade parecerCorpOk = fabCorp.criarPoliticaSeguranca().avaliarRequisicao(reqExcesso);
+        assertTrue(parecerCorpOk.aprovado());
+
+        // 3. Família Industrial de Alta Criticidade
+        IAmbienteOperacionalFactory fabInd = ProvedorFabricaAmbiente.obterFabrica(TipoAmbiente.INDUSTRIAL_CRITICO);
+        assertTrue(fabInd instanceof AmbienteIndustrialFactory);
+
+        // Tarifa industrial (+40% seguro): 10 dias * 100 * 1.40 = 1400.00
+        BigDecimal custoInd = fabInd.criarCalculadora().calcularCustoTotal(10, baseDiaria);
+        assertEquals(new BigDecimal("1400.00"), custoInd);
+
+        // Requisicao sem certificação NR -> Reprovado sumariamente
+        ParecerConformidade parecerIndSemNr = fabInd.criarPoliticaSeguranca().avaliarRequisicao(reqSemNr);
+        assertFalse(parecerIndSemNr.aprovado());
+        assertTrue(parecerIndSemNr.justificativa().contains("NR-10/NR-12"));
+
+        // Requisicao com mais de 7 dias no industrial -> Reprovado por ciclo de inspeção
+        ParecerConformidade parecerIndExcesso = fabInd.criarPoliticaSeguranca().avaliarRequisicao(req1);
+        assertFalse(parecerIndExcesso.aprovado());
+        assertTrue(parecerIndExcesso.justificativa().contains("máx 7 dias"));
+    }
+
+    @Test
+    @DisplayName("Guia 38 & Visitor: Deve executar operações polimórficas desacopladas via Double Dispatch")
+    void testPadraoVisitorOperacoesPolimorficas() {
+        LocalDate hoje = LocalDate.now();
+
+        IItemPatrimonial hw = new EquipamentoHardware("HW-01", "Servidor Dell R740", new BigDecimal("10000.00"), hoje.minusMonths(30), 750, true);
+        IItemPatrimonial mob = new MobiliarioPatrimonial("MOB-01", "Mesa Estação 4 Lugares", new BigDecimal("4000.00"), hoje.minusMonths(60), "Aço", true);
+        IItemPatrimonial sw = new LicencaSoftware("SW-01", "IDE Enterprise Anual", new BigDecimal("3000.00"), hoje.minusMonths(6), 5, hoje.plusMonths(6));
+
+        List<IItemPatrimonial> acervo = List.of(hw, mob, sw);
+
+        // 1. Visitor de Depreciação Contábil
+        VisitorCalculoDepreciacao visitorDep = new VisitorCalculoDepreciacao(hoje);
+        acervo.forEach(item -> item.accept(visitorDep));
+
+        assertEquals(new BigDecimal("17000.00"), visitorDep.getTotalAquisicao());
+        assertTrue(visitorDep.getTotalDepreciado().compareTo(BigDecimal.ZERO) > 0);
+        assertTrue(visitorDep.getTotalResidual().compareTo(BigDecimal.ZERO) > 0);
+        assertEquals(visitorDep.getTotalAquisicao(), visitorDep.getTotalDepreciado().add(visitorDep.getTotalResidual()));
+        assertEquals(3, visitorDep.getDiscriminativo().size());
+
+        // 2. Visitor de Auditoria e Conformidade
+        IItemPatrimonial hwSemLaudo = new EquipamentoHardware("HW-02", "Osciloscópio Antigo", new BigDecimal("2000.00"), hoje.minusMonths(10), 100, false);
+        IItemPatrimonial mobSemErgonomia = new MobiliarioPatrimonial("MOB-02", "Banqueta Alta", new BigDecimal("300.00"), hoje.minusMonths(12), "Ferro", false);
+        IItemPatrimonial swExpirado = new LicencaSoftware("SW-02", "CAD Suite", new BigDecimal("5000.00"), hoje.minusMonths(24), 2, hoje.minusDays(5));
+
+        List<IItemPatrimonial> acervoAuditoria = List.of(hw, mob, sw, hwSemLaudo, mobSemErgonomia, swExpirado);
+
+        VisitorAuditoriaConformidade visitorAud = new VisitorAuditoriaConformidade(hoje);
+        acervoAuditoria.forEach(item -> item.accept(visitorAud));
+
+        assertEquals(3, visitorAud.getTotalConformes());
+        assertEquals(3, visitorAud.getTotalPendencias());
+        assertTrue(visitorAud.getAchadosAuditoria().stream().anyMatch(a -> a.contains("SEM LAUDO ELÉTRICO")));
+        assertTrue(visitorAud.getAchadosAuditoria().stream().anyMatch(a -> a.contains("NR-17")));
+        assertTrue(visitorAud.getAchadosAuditoria().stream().anyMatch(a -> a.contains("EXPIRADA")));
+    }
+
+    @Test
+    @DisplayName("Guia 39 & Flyweight: Deve compartilhar estados intrínsecos e economizar instâncias no Heap")
+    void testPadraoFlyweightOtimizacaoMemoria() {
+        FlyweightEspecificacaoFactory.limparPool();
+        assertEquals(0, FlyweightEspecificacaoFactory.getQuantidadeFlyweightsNoPool());
+        assertEquals(0, FlyweightEspecificacaoFactory.getTotalReusos());
+
+        // Criar 100 itens distribuídos entre apenas 2 modelos flyweight
+        List<ItemInventarioContexto> inventario = new java.util.ArrayList<>();
+
+        for (int i = 1; i <= 100; i++) {
+            boolean par = (i % 2 == 0);
+            String modelo = par ? "RIGOL-DS1054Z" : "MINIPA-PS3005";
+            String fab = par ? "Rigol" : "Minipa";
+            String desc = par ? "Osciloscópio 4CH" : "Fonte DC 30V";
+            String cat = par ? "Medição" : "Alimentação";
+            String tensao = par ? "Bivolt" : "220V";
+            String cor = par ? "#1565c0" : "#c62828";
+
+            EspecificacaoEquipamentoFlyweight spec = FlyweightEspecificacaoFactory.obterEspecificacao(
+                    modelo, fab, desc, cat, tensao, cor
+            );
+
+            ItemInventarioContexto item = new ItemInventarioContexto(
+                    "PAT-" + i, "SN-" + i, "Bancada " + (i % 5), false, spec
+            );
+            inventario.add(item);
+        }
+
+        // Validações de Eficiência do Flyweight
+        assertEquals(100, inventario.size());
+        assertEquals(2, FlyweightEspecificacaoFactory.getQuantidadeFlyweightsNoPool(), "Deve haver exatamente 2 instâncias de especificação no pool!");
+        assertEquals(98, FlyweightEspecificacaoFactory.getTotalReusos(), "98 criações devem ter sido reusos puros sem novas instanciações!");
+
+        // Validação de Identidade de Referência no Heap (assertSame)
+        ItemInventarioContexto item1 = inventario.get(0); // ímpar -> Minipa
+        ItemInventarioContexto item3 = inventario.get(2); // ímpar -> Minipa
+        assertSame(item1.getEspecificacao(), item3.getEspecificacao(), "Ambos os itens devem apontar para a mesma instância em RAM!");
+    }
+
+    @Test
+    @DisplayName("Guia 40 & Iterator: Deve navegar de forma bidirecional com paginação virtual sob demanda")
+    void testPadraoIteratorPaginacaoVirtual() {
+        List<RegistroAcervoVirtual> registros = new java.util.ArrayList<>();
+        for (int i = 1; i <= 35; i++) {
+            registros.add(new RegistroAcervoVirtual(
+                    i, "COD-" + i, "Equipamento Teste " + i,
+                    (i % 2 == 0 ? "Elétrica" : "Mecânica"),
+                    LocalDate.now().minusDays(i), true
+            ));
+        }
+
+        // 35 itens com página de 10 -> Total 4 páginas (10, 10, 10, 5)
+        IPaginadorIterator<RegistroAcervoVirtual> paginador = new PaginadorVirtualMemoria<>(registros, 10);
+
+        assertEquals(1, paginador.getCurrentPage());
+        assertEquals(4, paginador.getTotalPages());
+        assertEquals(35, paginador.getTotalItems());
+        assertEquals(10, paginador.getPageSize());
+
+        assertFalse(paginador.hasPreviousPage());
+        assertTrue(paginador.hasNextPage());
+
+        // Página 1: 10 itens (id 1 a 10)
+        List<RegistroAcervoVirtual> p1 = paginador.currentPageItems();
+        assertEquals(10, p1.size());
+        assertEquals("COD-1", p1.get(0).codigoTombamento());
+        assertEquals("COD-10", p1.get(9).codigoTombamento());
+
+        // Avança para página 2
+        List<RegistroAcervoVirtual> p2 = paginador.nextPage();
+        assertEquals(2, paginador.getCurrentPage());
+        assertEquals("COD-11", p2.get(0).codigoTombamento());
+        assertTrue(paginador.hasPreviousPage());
+        assertTrue(paginador.hasNextPage());
+
+        // Salto direto para a última página (4)
+        List<RegistroAcervoVirtual> p4 = paginador.jumpToPage(4);
+        assertEquals(4, paginador.getCurrentPage());
+        assertEquals(5, p4.size(), "Última página deve conter os 5 itens restantes.");
+        assertEquals("COD-31", p4.get(0).codigoTombamento());
+        assertEquals("COD-35", p4.get(4).codigoTombamento());
+        assertFalse(paginador.hasNextPage());
+
+        // Exceção ao tentar avançar além da última página
+        assertThrows(java.util.NoSuchElementException.class, paginador::nextPage);
+
+        // Volta para a página 3 via previousPage()
+        List<RegistroAcervoVirtual> p3 = paginador.previousPage();
+        assertEquals(3, paginador.getCurrentPage());
+        assertEquals("COD-21", p3.get(0).codigoTombamento());
+
+        // Redimensiona o tamanho de página para 20 -> 35 itens viram 2 páginas (20 e 15)
+        paginador.setPageSize(20);
+        assertEquals(1, paginador.getCurrentPage(), "Deve resetar para a primeira página.");
+        assertEquals(2, paginador.getTotalPages());
+        assertEquals(20, paginador.currentPageItems().size());
+
+        // Teste de Filtro dinâmico: apenas departamento Elétrica (pares: 17 itens)
+        paginador.aplicarFiltro(r -> r.departamentoResponsavel().equals("Elétrica"));
+        assertEquals(17, paginador.getTotalItems());
+        assertEquals(1, paginador.getTotalPages()); // 17 cabe em 20
+        assertTrue(paginador.currentPageItems().stream().allMatch(r -> r.departamentoResponsavel().equals("Elétrica")));
+
+        // Limpa filtro
+        paginador.limparFiltro();
+        assertEquals(35, paginador.getTotalItems());
     }
 }

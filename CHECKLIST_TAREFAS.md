@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **35 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **39 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -13,6 +13,7 @@
 - [ ] **Etapa 6: Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI (Fases 24 a 27)**
 - [ ] **Etapa 7: Estruturação Hierárquica, Extensibilidade Dinâmica, Pipelines de Regras e Interoperabilidade (Fases 28 a 31)**
 - [ ] **Etapa 8: Orquestração de Subsistemas, Mediação de Telas, Recursos Virtuais e Observabilidade de Domínio (Fases 32 a 35)**
+- [ ] **Etapa 9: Criação Polimórfica, Operações com Double Dispatch, Eficiência de Memória e Paginação Sob Demanda (Fases 36 a 39)**
 
 ---
 
@@ -449,3 +450,51 @@
   - *Descrição:* Desenvolver operações puras de alocação, devolução e emissão de eventos tipados armazenados em lista thread-safe (`CopyOnWriteArrayList`).
 - [ ] **Tarefa 35.3: Desenvolver a `PonteReativaJavaFX` com Despacho Seguro via `Platform.runLater()`**
   - *Descrição:* Construir adaptador na camada de apresentação que implementa `IObservadorDominio` e atualiza `ObservableList` e propriedades visuais na UI Thread sem riscos de concorrência.
+
+---
+
+## Fase 36 — Padrão GoF Factory Method & Abstract Factory (Criação Polimórfica e Famílias de Componentes/Regras Desacopladas)
+- [ ] **Tarefa 36.1: Definir Contratos da Fábrica Abstrata (`IAmbienteOperacionalFactory`) e Família de Produtos**
+  - *Descrição:* Modelar produtos abstratos para Tarifação (`ICalculadoraTarifa`), Segurança (`IPoliticaSeguranca`) e Componentes Visuais (`IRenderizadorBadgeUI`).
+  - *Guia Relacionado:* `guias/37-padrao-factory-method-e-abstract-factory-familias-polimorficas.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/factory/ExemploAbstractFactoryETemasAmbiente.java`
+- [ ] **Tarefa 36.2: Implementar as Famílias Concretas Especializadas**
+  - *Descrição:* Criar fábricas concretas para os ambientes Educacional (descontos e limites acadêmicos), Corporativo (SLA 24h e teto expandido) e Industrial (seguro de risco e checagem rígida de NR-10/NR-12).
+- [ ] **Tarefa 36.3: Integrar ao Controlador JavaFX com Substituição Dinâmica de Famílias**
+  - *Descrição:* Conectar `ComboBox` ao provedor de fábricas polimórfico, atualizando a `TableView` e badges visuais sem nenhum bloco `if/else` no controlador.
+
+---
+
+## Fase 37 — Padrão GoF Visitor (Operações Polimórficas Externas, Double Dispatch e Relatórios Desacoplados)
+- [ ] **Tarefa 37.1: Modelar Interfaces do Padrão Visitor (`IVisitorPatrimonial`, `IItemPatrimonial`)**
+  - *Descrição:* Declarar métodos de visitação sobrecarregados para cada tipo da hierarquia e método `accept(visitor)` nas entidades de domínio.
+  - *Guia Relacionado:* `guias/38-padrao-visitor-operacoes-polimorficas-e-double-dispatch.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/visitor/ExemploVisitorOperacoesPolimorficas.java`
+- [ ] **Tarefa 37.2: Implementar Visitors Especializados de Negócio**
+  - *Descrição:* Construir `VisitorCalculoDepreciacao` (depreciação contábil acumulada e valor residual) e `VisitorAuditoriaConformidade` (inspeção técnica sem poluir o modelo).
+- [ ] **Tarefa 37.3: Integrar ao JavaFX com Processamento em Lote sobre a `TableView`**
+  - *Descrição:* Executar dispatch duplo sobre os itens da tabela e renderizar relatórios consolidados em `TextArea` e indicadores visuais.
+
+---
+
+## Fase 38 — Padrão GoF Flyweight (Otimização Extrema de Memória, Estados Intrínsecos/Extrínsecos e Renderização Eficiente)
+- [ ] **Tarefa 38.1: Segregar Estados Intrínsecos e Extrínsecos no Modelo de Domínio**
+  - *Descrição:* Criar Record imutável `EspecificacaoEquipamentoFlyweight` (intrínseco) e classe de contexto leve `ItemInventarioContexto` (extrínseco com ponteiro em RAM).
+  - *Guia Relacionado:* `guias/39-padrao-flyweight-otimizacao-memoria-e-estados-compartilhados.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/flyweight/ExemploFlyweightOtimizacaoMemoria.java`
+- [ ] **Tarefa 38.2: Implementar Fábrica de Flyweights com Pool Thread-Safe**
+  - *Descrição:* Gerenciar instâncias compartilhadas via `ConcurrentHashMap` com `compute()` atômico e rastreamento de reusos.
+- [ ] **Tarefa 38.3: Integrar à `TableView` JavaFX com Carga Massiva em Tempo Real**
+  - *Descrição:* Exibir milhares de itens em tabela mantendo pool constante de flyweights e painel com métricas de economia de memória.
+
+---
+
+## Fase 39 — Padrão GoF Iterator & Paginação Virtual em JavaFX (Navegação Sob Demanda para Grandes Volumes)
+- [ ] **Tarefa 39.1: Definir o Contrato `IPaginadorIterator<T>` Bidirecional**
+  - *Descrição:* Declarar métodos para navegação por páginas (`hasNextPage`, `nextPage`, `previousPage`, `jumpToPage`, `setPageSize`, `aplicarFiltro`).
+  - *Guia Relacionado:* `guias/40-padrao-iterator-paginacao-virtual-e-navegacao-sob-demanda.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/iterator/ExemploIteratorPaginacaoVirtualJavaFX.java`
+- [ ] **Tarefa 39.2: Implementar o Fatiador Virtual com Proteção de Limites**
+  - *Descrição:* Desenvolver `PaginadorVirtualMemoria` com fatiamento eficiente (`subList` imutável), tratamento para coleções vazias e reset atômico ao filtrar.
+- [ ] **Tarefa 39.3: Conectar à Barra de Navegação e `TableView` JavaFX**
+  - *Descrição:* Construir controles de interface (`<<`, `<`, indicador `Página X de Y`, `>`, `>>`, seletor de tamanho de lote e busca instantânea) garantindo 60 FPS estáveis.
