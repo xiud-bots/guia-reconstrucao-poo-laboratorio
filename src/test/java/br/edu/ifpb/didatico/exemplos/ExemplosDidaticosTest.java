@@ -54,6 +54,25 @@ import br.edu.ifpb.didatico.exemplos.templatemethod.ExemploTemplateMethodImporta
 import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.CaretakerPreferencias;
 import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.EstadoJanelaMemento;
 import br.edu.ifpb.didatico.exemplos.memento.ExemploMementoEPreferenciasJavaFX.OriginatorJanela;
+import br.edu.ifpb.didatico.exemplos.composite.ExemploCompositeETreeView;
+import br.edu.ifpb.didatico.exemplos.composite.ExemploCompositeETreeView.CategoriaComposta;
+import br.edu.ifpb.didatico.exemplos.composite.ExemploCompositeETreeView.ComponentePatrimonial;
+import br.edu.ifpb.didatico.exemplos.composite.ExemploCompositeETreeView.ItemFolha;
+import br.edu.ifpb.didatico.exemplos.decorator.ExemploDecoratorTarifacaoDinamica.HigienizacaoTecnicaDecorator;
+import br.edu.ifpb.didatico.exemplos.decorator.ExemploDecoratorTarifacaoDinamica.IServicoPrecificavel;
+import br.edu.ifpb.didatico.exemplos.decorator.ExemploDecoratorTarifacaoDinamica.LocacaoBase;
+import br.edu.ifpb.didatico.exemplos.decorator.ExemploDecoratorTarifacaoDinamica.SeguroAvariaDecorator;
+import br.edu.ifpb.didatico.exemplos.decorator.ExemploDecoratorTarifacaoDinamica.SuporteTecnico24hDecorator;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao.PerfilSolicitante;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao.RegraNegocioVioladaException;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao.RequisicaoOperacao;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao.ValidadorRequisicao;
+import br.edu.ifpb.didatico.exemplos.chain.ExemploChainOfResponsibilityValidacao.ViolacaoRegra;
+import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.AdaptadorItemLegado;
+import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.IItemCatalogoLocal;
+import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.ImportadorFeedLegado;
+import br.edu.ifpb.didatico.exemplos.adapter.ExemploAdapterIntegracaoLegada.LegacyVendorItemDTO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.junit.jupiter.api.DisplayName;
@@ -743,5 +762,156 @@ public class ExemplosDidaticosTest {
         assertEquals("ESCURO", novoOriginator.getTemaAtivo());
 
         Files.deleteIfExists(tempProps);
+    }
+
+    @Test
+    @DisplayName("Guia 29 & Composite: Deve calcular valor e contagem recursiva e impedir ciclos na hierarquia")
+    void testPadraoCompositeETreeView() {
+        CategoriaComposta raiz = new CategoriaComposta("DIR-TI", "Diretoria de Tecnologia");
+
+        CategoriaComposta depDev = new CategoriaComposta("DEP-DEV", "Departamento de Desenvolvimento");
+        ItemFolha note1 = new ItemFolha("NOTE-01", "Notebook Dell Pro", new BigDecimal("6500.00"));
+        ItemFolha note2 = new ItemFolha("NOTE-02", "Notebook Dell Pro", new BigDecimal("6500.00"));
+        depDev.adicionar(note1);
+        depDev.adicionar(note2);
+
+        CategoriaComposta depInfra = new CategoriaComposta("DEP-INFRA", "Departamento de Infraestrutura");
+        ItemFolha switchRede = new ItemFolha("SW-01", "Switch Core 48p", new BigDecimal("12000.00"));
+        depInfra.adicionar(switchRede);
+
+        raiz.adicionar(depDev);
+        raiz.adicionar(depInfra);
+
+        // 1. Verificação de agregação recursiva polimórfica
+        assertEquals(3, raiz.contarItensFisicos());
+        assertEquals(2, depDev.contarItensFisicos());
+        assertEquals(1, depInfra.contarItensFisicos());
+        assertEquals(0, new BigDecimal("25000.00").compareTo(raiz.calcularValorTotal()));
+        assertEquals(0, new BigDecimal("13000.00").compareTo(depDev.calcularValorTotal()));
+
+        // 2. Verificação de imutabilidade e proteção defensiva
+        assertTrue(raiz.isComposto());
+        assertFalse(note1.isComposto());
+        assertEquals(2, raiz.getFilhos().size());
+        assertThrows(UnsupportedOperationException.class, () -> raiz.getFilhos().add(new ItemFolha("X", "Y", BigDecimal.ONE)));
+
+        // 3. Impedimento de auto-inclusão (ciclos)
+        assertThrows(IllegalArgumentException.class, () -> raiz.adicionar(raiz));
+
+        // 4. Mapeamento para TreeItem JavaFX
+        var treeNode = ExemploCompositeETreeView.construirTreeItemRecursivo(raiz);
+        assertNotNull(treeNode);
+        assertEquals(2, treeNode.getChildren().size());
+        assertEquals("Diretoria de Tecnologia", treeNode.getValue().getNome());
+    }
+
+    @Test
+    @DisplayName("Guia 30 & Decorator: Deve compor taxas e serviços dinamicamente preservando discriminativo")
+    void testPadraoDecoratorTarifacaoDinamica() {
+        LocacaoBase base = new LocacaoBase("Gerador de Funções RF", new BigDecimal("40.00"), 4);
+
+        // Custo base: 4 dias * R$ 40,00 = R$ 160,00
+        assertEquals(0, new BigDecimal("160.00").compareTo(base.calcularCustoTotal()));
+        assertEquals(1, base.getLinhasDetalhadas().size());
+
+        // Decorador 1: Seguro (15% de 160 = R$ 24,00 -> ajustado para o piso mínimo de R$ 25,00)
+        IServicoPrecificavel comSeguro = new SeguroAvariaDecorator(base);
+        assertEquals(0, new BigDecimal("185.00").compareTo(comSeguro.calcularCustoTotal()));
+        assertEquals(2, comSeguro.getLinhasDetalhadas().size());
+
+        // Decorador 2: Higienização Técnica (taxa fixa de R$ 35,00 -> total R$ 220,00)
+        IServicoPrecificavel comHigienizacao = new HigienizacaoTecnicaDecorator(comSeguro);
+        assertEquals(0, new BigDecimal("220.00").compareTo(comHigienizacao.calcularCustoTotal()));
+        assertEquals(3, comHigienizacao.getLinhasDetalhadas().size());
+
+        // Decorador 3: Suporte 24h (4 dias * R$ 10,00 = R$ 40,00 -> total R$ 260,00)
+        IServicoPrecificavel completo = new SuporteTecnico24hDecorator(comHigienizacao);
+        assertEquals(0, new BigDecimal("260.00").compareTo(completo.calcularCustoTotal()));
+        assertEquals(4, completo.getLinhasDetalhadas().size());
+
+        // Invariantes da Base
+        assertThrows(IllegalArgumentException.class, () -> new LocacaoBase("", new BigDecimal("10.00"), 2));
+        assertThrows(IllegalArgumentException.class, () -> new LocacaoBase("Item", BigDecimal.ZERO, 2));
+        assertThrows(IllegalArgumentException.class, () -> new LocacaoBase("Item", new BigDecimal("10.00"), 0));
+    }
+
+    @Test
+    @DisplayName("Guia 31 & Chain of Responsibility: Deve auditar requisição em múltiplos elos e suportar Fail-Fast")
+    void testPadraoChainOfResponsibilityValidacao() {
+        ValidadorRequisicao cadeia = ExemploChainOfResponsibilityValidacao.criarCadeiaPadrao();
+
+        // 1. Requisição 100% válida
+        RequisicaoOperacao reqValida = new RequisicaoOperacao(
+                "20261010",
+                PerfilSolicitante.ESTUDANTE,
+                0, // sem atrasos
+                1, // 1 em aberto
+                1, // 1 solicitado (total 2 <= cota 3)
+                new BigDecimal("1200.00"), // <= teto 3000.00
+                false
+        );
+        List<ViolacaoRegra> violacoesValida = new java.util.ArrayList<>();
+        cadeia.auditar(reqValida, violacoesValida);
+        assertTrue(violacoesValida.isEmpty());
+        assertDoesNotThrow(() -> cadeia.validarFailFast(reqValida));
+
+        // 2. Requisição com múltiplas infrações auditadas (Atraso + Cota Excedida + Teto Excedido + Restrito)
+        RequisicaoOperacao reqInvalida = new RequisicaoOperacao(
+                "20261020",
+                PerfilSolicitante.ESTUDANTE,
+                3, // em atraso! (SUSP-01)
+                2, // 2 em aberto + 2 solicitados = 4 > cota 3 (COTA-02)
+                2,
+                new BigDecimal("4500.00"), // > teto 3000 (FIN-03)
+                true // Estudante com equipamento restrito! (PERM-04)
+        );
+
+        List<ViolacaoRegra> violacoesInvalida = new java.util.ArrayList<>();
+        cadeia.auditar(reqInvalida, violacoesInvalida);
+
+        assertEquals(4, violacoesInvalida.size());
+        assertEquals("SUSP-01", violacoesInvalida.get(0).codigoRegra());
+        assertEquals("COTA-02", violacoesInvalida.get(1).codigoRegra());
+        assertEquals("FIN-03", violacoesInvalida.get(2).codigoRegra());
+        assertEquals("PERM-04", violacoesInvalida.get(3).codigoRegra());
+
+        // 3. Teste Fail-Fast: deve parar no primeiro elo (SUSP-01)
+        RegraNegocioVioladaException ex = assertThrows(RegraNegocioVioladaException.class, () -> cadeia.validarFailFast(reqInvalida));
+        assertEquals("SUSP-01", ex.getCodigoRegra());
+    }
+
+    @Test
+    @DisplayName("Guia 32 & Adapter: Deve converter esquema legado para contrato limpo sem vazar abstração")
+    void testPadraoAdapterIntegracaoLegada() {
+        LegacyVendorItemDTO legDto = new LegacyVendorItemDTO(42, "   Osciloscópio Tektronix Usado   ", 89900L, 1);
+        AdaptadorItemLegado adaptador = new AdaptadorItemLegado(legDto);
+
+        // Validações do Adaptador
+        assertEquals("LEG-000042", adaptador.getCodigoIdentificador());
+        assertEquals("Osciloscópio Tektronix Usado", adaptador.getNomeExibicao());
+        assertEquals(0, new BigDecimal("899.00").compareTo(adaptador.getPrecoEstimado()));
+        assertTrue(adaptador.isDisponivel());
+        assertEquals("Parceiro Externo Legacy (API v1)", adaptador.getOrigemRegistro());
+
+        // Status code != 1 deve ser indisponível
+        LegacyVendorItemDTO legDtoInativo = new LegacyVendorItemDTO(43, "Multímetro Descalibrado", 5000L, 2);
+        AdaptadorItemLegado adaptadorInativo = new AdaptadorItemLegado(legDtoInativo);
+        assertFalse(adaptadorInativo.isDisponivel());
+
+        // Importação em lote a partir de formato pipe legado
+        List<String> linhas = List.of(
+                "# Cabecalho",
+                "100|Ponteira de Prova 100MHz|3500|1",
+                "200|Cabo BNC Jacaré|1200|1",
+                "300|Alicate Amperímetro Quebrado|15000|9",
+                "LINHA_CORROMPIDA_SEM_PIPE"
+        );
+
+        List<IItemCatalogoLocal> adaptados = ImportadorFeedLegado.importarLinhas(linhas);
+        assertEquals(3, adaptados.size());
+        assertEquals("LEG-000100", adaptados.get(0).getCodigoIdentificador());
+        assertEquals(0, new BigDecimal("35.00").compareTo(adaptados.get(0).getPrecoEstimado()));
+        assertTrue(adaptados.get(0).isDisponivel());
+        assertFalse(adaptados.get(2).isDisponivel());
     }
 }

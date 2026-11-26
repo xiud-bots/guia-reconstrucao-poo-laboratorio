@@ -1,6 +1,6 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **27 Fases Metodológicas** rigorosamente sequenciadas.
+> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **31 Fases Metodológicas** rigorosamente sequenciadas.
 
 ---
 
@@ -11,6 +11,7 @@
 - [ ] **Etapa 4: Reatividade em Tabelas, Integridade Atômica, Desacoplamento e Regras Temporais (Fases 16 a 19)**
 - [ ] **Etapa 5: Inteligência Visual, Reversibilidade e Resiliência Operacional (Fases 20 a 23)**
 - [ ] **Etapa 6: Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI (Fases 24 a 27)**
+- [ ] **Etapa 7: Estruturação Hierárquica, Extensibilidade Dinâmica, Pipelines de Regras e Interoperabilidade (Fases 28 a 31)**
 
 ---
 
@@ -351,3 +352,51 @@
   - *Descrição:* Salvar e restaurar snapshots usando `java.util.prefs.Preferences` da plataforma Java e/ou arquivos `.properties` no diretório do usuário sem bibliotecas externas.
 - [ ] **Tarefa 27.3: Integrar ao Ciclo de Vida do JavaFX (`start()` e `setOnCloseRequest()`)**
   - *Descrição:* Restaurar layout e tema ao iniciar a aplicação e gravar snapshot automaticamente ao fechar o palco principal.
+
+---
+
+## Fase 28 — Padrão GoF Composite e Hierarquias de Domínio no JavaFX (`TreeView` e `TreeCell`)
+- [ ] **Tarefa 28.1: Modelar a Hierarquia de Domínio em Árvore com Padrão Composite**
+  - *Descrição:* Criar superclasse abstrata `ComponentePatrimonial`, elemento folha `ItemFolha` e nó composto `CategoriaComposta` com validação defensiva anti-loop e coleções imutáveis.
+  - *Guia Relacionado:* `guias/29-padrao-composite-hierarquias-de-dominio-e-treeview.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/composite/ExemploCompositeETreeView.java`
+- [ ] **Tarefa 28.2: Implementar Operações Recursivas Uniformes de Agregação**
+  - *Descrição:* Desenvolver métodos polimórficos `calcularValorTotal()` e `contarItensFisicos()` executados recursivamente sem `instanceof`.
+- [ ] **Tarefa 28.3: Integrar com `TreeView` e `TreeCell` Customizado**
+  - *Descrição:* Mapear recursivamente para `TreeItem<ComponentePatrimonial>`, estilizando nós compostos (pastas) e folhas (itens) com badges e valores monetários.
+
+---
+
+## Fase 29 — Padrão GoF Decorator e Composição Dinâmica de Tarifas e Regras em UI
+- [ ] **Tarefa 29.1: Definir Contrato do Componente Precificável e Implementação Base**
+  - *Descrição:* Criar interface `IServicoPrecificavel` e componente base `LocacaoBase` com cálculo de custo base e lista de discriminativos.
+  - *Guia Relacionado:* `guias/30-padrao-decorator-extensao-dinamica-e-tarifacao.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/decorator/ExemploDecoratorTarifacaoDinamica.java`
+- [ ] **Tarefa 29.2: Implementar Decorador Abstrato e Decoradores Concretos Especializados**
+  - *Descrição:* Construir `ServicoOpcionalDecorator`, `SeguroAvariaDecorator`, `HigienizacaoTecnicaDecorator` e `SuporteTecnico24hDecorator` acumulando custos e discriminativo transparente.
+- [ ] **Tarefa 29.3: Integrar com Seleção Interativa de Opcionais na UI JavaFX**
+  - *Descrição:* Conectar CheckBoxes para empilhar decoradores dinamicamente e recalcular totalizador e discriminativo via Data Binding reativo.
+
+---
+
+## Fase 30 — Padrão GoF Chain of Responsibility e Pipelines de Auditoria e Validação
+- [ ] **Tarefa 30.1: Modelar o Manipulador Abstrato `ValidadorRequisicao` com Modos Duplos**
+  - *Descrição:* Implementar suporte a auditoria completa (coleta de todas as violações em `List<ViolacaoRegra>`) e modo Fail-Fast com exceção checada `RegraNegocioVioladaException`.
+  - *Guia Relacionado:* `guias/31-padrao-chain-of-responsibility-pipelines-e-autorizacao.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/chain/ExemploChainOfResponsibilityValidacao.java`
+- [ ] **Tarefa 30.2: Implementar Elos Concretos Especializados da Cadeia**
+  - *Descrição:* Construir validadores independentes para inadimplência/atraso, limite quantitativo de cota, teto financeiro patrimonial e equipamento restrito por perfil.
+- [ ] **Tarefa 30.3: Integrar ao Checklist Visual de Conformidade no JavaFX**
+  - *Descrição:* Desenvolver painel reativo com feedback visual verde/vermelho por critério regulamentar antes de liberar ações transacionais.
+
+---
+
+## Fase 31 — Padrão GoF Adapter e Interoperabilidade com Fontes Legadas e Externas
+- [ ] **Tarefa 31.1: Modelar a Interface Canônica Local do Domínio (Target)**
+  - *Descrição:* Definir contrato `IItemCatalogoLocal` com métodos idiomáticos limpos desacoplados de fornecedores externos.
+  - *Guia Relacionado:* `guias/32-padrao-adapter-interoperabilidade-e-sistemas-legados.md`
+  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/adapter/ExemploAdapterIntegracaoLegada.java`
+- [ ] **Tarefa 31.2: Implementar o Adaptador de Objeto (`AdaptadorItemLegado`)**
+  - *Descrição:* Encapsular `LegacyVendorItemDTO`, convertendo códigos primitivos, sanitizando texto, traduzindo centavos para `BigDecimal` e mapeando flags numéricas para booleanos.
+- [ ] **Tarefa 31.3: Conectar Catálogo Adaptado à `TableView` do JavaFX**
+  - *Descrição:* Exibir os dados legados adaptados na tabela consumindo exclusivamente o contrato canônico, preservando o isolamento arquitetural da interface gráfica.
