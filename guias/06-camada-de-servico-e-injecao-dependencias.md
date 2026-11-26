@@ -1,4 +1,4 @@
-# Guia 10 — Arquitetura de Camadas Limpa e Injeção Manual de Dependências
+# Guia 06 — Camada de Serviço e Injeção Manual de Dependências
 
 ## 1. O Conceito em Linguagem Clara: Por Que Camadas Desacopladas?
 
@@ -10,15 +10,15 @@ Imagine a construção de um edifício residencial:
 Se o arquiteto de interiores cimentasse o sofá diretamente na tubulação de água principal, qualquer reforma na sala causaria um vazamento incontrolável em todo o prédio.
 
 Em engenharia de software, a **Arquitetura em Camadas (Layered Architecture)** estabelece fronteiras claras de responsabilidade:
-1. **Camada de Apresentação (GUI / FXML / Controllers):** Conhece apenas a experiência do usuário. Coleta entradas nos campos de texto, chama os métodos do serviço e desenha os dados na tela. **Não calcula multas, não valida prazos e não toca em arquivos de disco.**
+1. **Camada de Apresentação (Terminal na Etapa 1 / JavaFX na Etapa 2):** Conhece apenas a experiência do usuário. Coleta entradas nos campos ou terminal, chama os métodos do serviço e desenha os dados na tela. **Não calcula multas, não valida prazos e não toca em arquivos de disco.**
 2. **Camada de Serviço (Regras de Negócio e Orquestração):** O coração lógico do sistema. Valida se o usuário pode realizar a ação, executa os algoritmos de cálculo, orquestra as entidades e solicita a gravação aos repositórios.
-3. **Camada de Persistência (Repositório / DAO):** Responsável estritamente pela leitura e escrita no meio físico (arquivos CSV, SQLite, memória). Não toma decisões de negócio sobre se uma operação é permitida ou não.
-4. **Camada de Domínio (Entidades e Value Objects):** Representa os conceitos do negócio puro (`Item`, `Pessoa`, `Emprestimo`, `Multa`). É totalmente independente de telas e de bancos de dados.
+3. **Camada de Persistência (Repositório / DAO):** Responsável estritamente pela leitura e escrita no meio físico (arquivos CSV). Não toma decisões de negócio sobre se uma operação é permitida ou não.
+4. **Camada de Domínio (Entidades e Regras de Multa):** Representa os conceitos do negócio puro (`Item`, `Pessoa`, `Emprestimo`, `RegraMulta`). É totalmente independente de telas e de mecanismos de persistência.
 
 ### Injeção Manual de Dependências (Pure DI / Sem Frameworks)
-Em projetos corporativos Spring Boot usa-se `@Autowired`, mas em Java puro desktop o padrão profissional é a **Injeção de Dependências por Construtor (Constructor Injection)**:
+Em projetos corporativos Spring Boot usa-se `@Autowired`, mas em Java puro desktop o padrão profissional e simples é a **Injeção de Dependências por Construtor (Constructor Injection)**:
 - Uma classe **recebe** tudo o que precisa para funcionar através dos parâmetros do seu construtor, em vez de dar `new` internamente.
-- Isso torna o código 100% testável com testes unitários usando repositórios falsos em memória (*fakes*).
+- Isso torna o código totalmente desacoplado, permitindo que a mesma camada de serviço funcione tanto no terminal da Etapa 1 quanto na interface JavaFX da Etapa 2 sem modificar uma única linha de lógica de negócio.
 
 ---
 
@@ -26,19 +26,18 @@ Em projetos corporativos Spring Boot usa-se `@Autowired`, mas em Java puro deskt
 
 ```mermaid
 flowchart TD
-    subgraph Apresentacao ["Camada de Apresentação (GUI / JavaFX)"]
-        A[JanelaPrincipal.fxml] --> B[JanelaPrincipalControlador]
+    subgraph Apresentacao ["Camada de Apresentação (Terminal ou JavaFX)"]
+        A[PrincipalTerminal / JanelaPrincipalControlador]
     end
 
     subgraph Negocio ["Camada de Serviço (Regras de Negócio)"]
-        B -->|Chama Métodos de Orquestração| C[IServicoEmprestimo]
+        A -->|Chama Métodos de Orquestração| C[IServicoEmprestimo]
         C -.->|Implementa| D[ServicoEmprestimoImpl]
     end
 
-    subgraph Persistencia ["Camada de Acesso a Dados (Persistência)"]
+    subgraph Persistencia ["Camada de Acesso a Dados (Persistência CSV)"]
         D -->|Depende da Abstração DIP| E[IRepositorioItem]
         E -.->|Implementa| F[RepositorioItemCSV]
-        E -.->|Implementa para Testes| G[RepositorioItemMemoria]
     end
 
     subgraph Dominio ["Camada de Domínio Puro (POJOs / Entidades)"]

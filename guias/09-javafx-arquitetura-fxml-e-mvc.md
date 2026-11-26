@@ -1,4 +1,4 @@
-# Guia 06 — Arquitetura JavaFX, FXML Declarativo e MVC Desacoplado
+# Guia 09 — Arquitetura JavaFX, FXML Declarativo e MVC Desacoplado
 
 ## 1. O Triângulo Fundamental do JavaFX: Stage, Scene e Nós (Nodes)
 

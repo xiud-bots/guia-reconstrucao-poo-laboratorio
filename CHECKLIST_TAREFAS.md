@@ -1,500 +1,218 @@
 # Checklist de Tarefas: Reconstrução Passo a Passo do Projeto
 
-> Este documento contém a sequência ordenada de tarefas para guiar a implementação completa do sistema, dividida em **39 Fases Metodológicas** rigorosamente sequenciadas.
+> **Princípio Orientador:** Simplicidade, clareza didática e aderência cirúrgica às exigências da especificação.
+> 
+> 1. **Maven apenas na Etapa 2:** A Etapa 1 utiliza Java puro (`javac`/`java`) com estrutura de pastas tradicional, sem necessidade de ferramentas de automação externas. O Maven é introduzido unicamente na Etapa 2 para gerenciar os módulos nativos do OpenJFX 21.
+> 2. **Sem implementação de testes automatizados:** O projeto não exige e não implementa suítes de testes unitários (JUnit/Mockito). A validação é realizada operacionalmente através do roteiro de console exigido pelo professor na Seção 7 (Etapa 1) e da interface visual interativa (Etapa 2).
+> 3. **Padrões GoF restritos ao edital:** Nenhum padrão GoF adicional (Factory, Builder, Observer, Visitor, etc.) é implementado. Apenas o padrão **Strategy** exigido explicitamente para o cálculo de multas por tipo de item é utilizado.
 
 ---
 
-## 📋 Resumo do Progresso
-- [ ] **Etapa 1: Núcleo de Domínio, Persistência CSV, Inversão de Dependências e Terminal (Fases 1 a 8)**
-- [ ] **Etapa 2: Interface Desktop Gráfica em JavaFX, FXML, Concorrência e Data Binding (Fases 9 e 10)**
-- [ ] **Etapa 3: Padrões Avançados de Engenharia, Java 21 Moderno, Theming, Navegação e Testabilidade (Fases 11 a 15)**
-- [ ] **Etapa 4: Reatividade em Tabelas, Integridade Atômica, Desacoplamento e Regras Temporais (Fases 16 a 19)**
-- [ ] **Etapa 5: Inteligência Visual, Reversibilidade e Resiliência Operacional (Fases 20 a 23)**
-- [ ] **Etapa 6: Máquina de Estados, Construção Segura, Importação em Lote e Sessão de UI (Fases 24 a 27)**
-- [ ] **Etapa 7: Estruturação Hierárquica, Extensibilidade Dinâmica, Pipelines de Regras e Interoperabilidade (Fases 28 a 31)**
-- [ ] **Etapa 8: Orquestração de Subsistemas, Mediação de Telas, Recursos Virtuais e Observabilidade de Domínio (Fases 32 a 35)**
-- [ ] **Etapa 9: Criação Polimórfica, Operações com Double Dispatch, Eficiência de Memória e Paginação Sob Demanda (Fases 36 a 39)**
+## 🗺️ Visão Geral das Etapas e Fases
+
+| Etapa | Fases | Foco Principal | Tecnologia / Execução |
+| :--- | :--- | :--- | :--- |
+| **Etapa 1** | Fases 1 a 7 | Domínio OO, Strategy de Multas, Persistência CSV e Terminal | Java 21 LTS Puro (`javac` / `java`) |
+| **Etapa 2** | Fases 8 a 10 | Maven, Interface Gráfica FXML, TableView, Modais e Alertas | OpenJFX 21 + `mvn javafx:run` |
 
 ---
 
-## Fase 1 — Configuração do Ambiente e Estrutura do Projeto Maven
-- [ ] **Tarefa 1.1: Configurar o arquivo `pom.xml` inicial**
-  - *Descrição:* Configurar Java 21 LTS (`maven.compiler.source=21`), codificação UTF-8, dependências OpenJFX e JUnit 5 (`junit-jupiter`).
-  - *Conceito:* Gerenciamento declarativo de dependências e isolamento de ciclo de vida de compilação.
-  - *Guia Relacionado:* `guias/01-modelagem-oo-e-encapsulamento.md`
-- [ ] **Tarefa 1.2: Criar a árvore de diretórios padrão Maven**
-  - *Descrição:* Criar `src/main/java`, `src/test/java`, `src/main/resources` e subpastas de dados `dados/`.
-  - *Critério de Aceitação:* O comando `mvn compile` e `mvn test` devem executar com sucesso gerando a pasta `target/`.
+# ETAPA 1 — Domínio Orientado a Objetos, Persistência CSV e Execução no Terminal
 
 ---
 
-## Fase 2 — Modelagem das Entidades Básicas e Encapsulamento
-- [ ] **Tarefa 2.1: Modelar a entidade de pessoa/usuário**
-  - *Descrição:* Implementar atributos privados (`matricula`, `nome`, `email`/`tipo`), construtor com validação de invariantes e métodos de leitura (getters).
-  - *Conceito:* **Encapsulamento e Defensividade.** Nenhuma entidade deve nascer em estado inválido (strings nulas ou vazias devem disparar `IllegalArgumentException`).
-  - *Guia Relacionado:* `guias/01-modelagem-oo-e-encapsulamento.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/oo/ExemploEncapsulamentoEValidacao.java`
-- [ ] **Tarefa 2.2: Implementar métodos de identidade (`equals`, `hashCode` e `toString`)**
-  - *Descrição:* Garantir que a unicidade da pessoa seja determinada pela sua chave de negócio (matrícula).
-  - *Critério de Aceitação:* Duas instâncias com a mesma matrícula devem ser consideradas iguais em coleções `Set` ou `List.contains()`.
+### Fase 1 — Organização do Projeto e Estrutura de Pacotes (Java Puro)
+- [ ] **Tarefa 1.1:** Criar a estrutura básica de diretórios sem ferramentas de build:
+  - `src/`: código-fonte em pacotes Java.
+  - `dados/`: arquivos de texto CSV para persistência.
+  - `bin/`: diretório de destino para classes compiladas pelo `javac`.
+- [ ] **Tarefa 1.2:** Criar os arquivos de dados iniciais com codificação UTF-8 e delimitador ponto e vírgula (`;`):
+  - `dados/acervo.csv`: itens cadastrados com cabeçalho e suporte a comentários `#`.
+  - `dados/pessoas.csv`: usuários cadastrados com matrícula, nome e email.
+- [ ] **Tarefa 1.3:** Estruturar a divisão de pacotes respeitando a separação de responsabilidades:
+  - `modelo.entidade`: classes de negócio puras.
+  - `modelo.multa`: interface e estratégias de cálculo de multa.
+  - `modelo.excecao`: exceções checadas de domínio.
+  - `persistencia`: contratos e implementações de leitura/escrita em arquivo CSV.
+  - `servico`: regras de negócio e orquestração.
+  - `terminal`: classe com método `main` para execução da Seção 7.
+- 📖 *Caderno Didático:* `guias/01-modelagem-oo-e-encapsulamento.md`
 
 ---
 
-## Fase 3 — Regras Polimórficas e Padrão Strategy
-- [ ] **Tarefa 3.1: Criar a interface da regra de cálculo/multa**
-  - *Descrição:* Definir a assinatura `BigDecimal calcular(long diasAtraso)` ou equivalente.
-  - *Conceito:* **Padrão GoF Strategy.** Substituir cadeias de `if/else` e `switch` por polimorfismo dinâmico.
-  - *Guia Relacionado:* `guias/02-heranca-polimorfismo-e-strategy.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/strategy/ExemploStrategyPolimorfico.java`
-- [ ] **Tarefa 3.2: Implementar as estratégias concretas**
-  - *Descrição:* Implementar as variantes da regra (ex.: regra fixa por dia, regra progressiva com valor inicial maior, e regra de isenção retornando zero).
-  - *Critério de Aceitação:* Criar testes unitários para cada estratégia com 0 dias de atraso e com múltiplos dias, validando o cálculo centavo por centavo.
+### Fase 2 — Modelagem das Entidades de Domínio e Encapsulamento
+- [ ] **Tarefa 2.1:** Implementar a entidade `Pessoa`:
+  - Atributos privados: `matricula` (String), `nome` (String), `email` (String).
+  - Validação no construtor: rejeitar valores nulos ou vazios com `IllegalArgumentException`.
+  - Sobrescrever `equals()` e `hashCode()` baseados unicamente na matrícula.
+  - Sobrescrever `toString()` formatado para apresentação.
+- [ ] **Tarefa 2.2:** Criar a superclasse abstrata `Item`:
+  - Atributos protegidos/privados: `codigo` (String), `descricao` (String), `emprestado` (boolean), `regraMulta` (`RegraMulta`).
+  - Métodos abstratos: `public abstract int getPrazoEmprestimoDias();`.
+  - Métodos concretos de negócio: `emprestar()`, `devolver()`, `isEmprestado()`.
+  - Método de cálculo de multa delegando ao Strategy: `calcularMulta(long diasAtraso)`.
+- [ ] **Tarefa 2.3:** Implementar as subclasses concretas especializadas:
+  - `Notebook`: prazo de 7 dias, associado à estratégia `MultaFixa`.
+  - `Projetor`: prazo de 2 dias, associado à estratégia `MultaProgressiva`.
+  - `KitComponentes`: prazo de 15 dias, associado à estratégia `IsencaoMulta`.
+- [ ] **Tarefa 2.4:** Implementar a entidade `Emprestimo` utilizando composição:
+  - Atributos: `item` (`Item`), `pessoa` (`Pessoa`), `dataEmprestimo` (`LocalDate`), `dataPrevistaDevolucao` (`LocalDate`), `dataRealDevolucao` (`LocalDate`).
+  - Construtor calculando a `dataPrevistaDevolucao` somando os dias do `item.getPrazoEmprestimoDias()`.
+  - Método `isAtrasado()` comparando a data atual ou data real com a prevista.
+  - Método `getDiasAtraso()` calculando a diferença em dias via `ChronoUnit.DAYS`.
+- 📖 *Caderno Didático:* `guias/01-modelagem-oo-e-encapsulamento.md`
+- 💻 *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/oo/ExemploEncapsulamentoEValidacao.java`
 
 ---
 
-## Fase 4 — Hierarquia de Herança das Entidades Principais
-- [ ] **Tarefa 4.1: Criar a superclasse abstrata do acervo**
-  - *Descrição:* Declarar atributos comuns (`codigo/patrimonio`, `descricao`, `emprestado`), construtores sobrecarregados e injeção do Strategy da regra de cálculo.
-  - *Conceito:* **Abstração e Herança.** Impedir instanciação direta da superclasse (`new Item()` é proibido quando a classe é `abstract`).
-  - *Guia Relacionado:* `guias/02-heranca-polimorfismo-e-strategy.md`
-- [ ] **Tarefa 4.2: Implementar método de template abstrato para prazo**
-  - *Descrição:* Declarar método abstrato `public abstract int getPrazoEmprestimoDias()` que força cada subclasse a definir seu próprio prazo regulamentar.
-- [ ] **Tarefa 4.3: Implementar as subclasses especializadas**
-  - *Descrição:* Criar cada tipo de equipamento concreto herdando da superclasse e repassando ao `super(...)` os dados e sua regra de multa padrão.
-- [ ] **Tarefa 4.4: Modelar a classe de relacionamento (Empréstimo)**
-  - *Descrição:* Criar a classe que relaciona a pessoa ao item emprestado com data inicial e prevista.
-  - *Conceito:* **Composição sobre Herança.** Um empréstimo *tem um* item e *tem uma* pessoa, nunca deve herdar deles.
+### Fase 3 — Regras de Multa com Padrão GoF Strategy
+- [ ] **Tarefa 3.1:** Criar a interface funcional `RegraMulta`:
+  - Contrato: `BigDecimal calcular(long diasAtraso);`.
+- [ ] **Tarefa 3.2:** Implementar as classes concretas de estratégia conforme o documento de requisitos:
+  - `MultaFixa`: valor de R$ 5,00 por dia de atraso (`BigDecimal.valueOf(5.00).multiply(...)`).
+  - `MultaProgressiva`: R$ 10,00 no 1º dia de atraso + R$ 5,00 por cada dia adicional subsequente.
+  - `IsencaoMulta`: retorno fixo de `BigDecimal.ZERO` (isenção para kits).
+- [ ] **Tarefa 3.3:** Garantir que o cálculo trate dias negativos ou zero retornando `BigDecimal.ZERO`.
+- ⚠️ *Aviso Didático:* Apenas este padrão GoF é permitido no projeto, atendendo cirurgicamente ao edital.
+- 📖 *Caderno Didático:* `guias/02-heranca-polimorfismo-e-strategy.md`
+- 💻 *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/strategy/ExemploStrategyPolimorfico.java`
 
 ---
 
-## Fase 5 — Exceções de Domínio Personalizadas
-- [ ] **Tarefa 5.1: Criar exceção checada para estado indisponível**
-  - *Descrição:* Criar classe herdando de `Exception` (ex.: `ItemJaEmprestadoException`) para sinalizar falhas de negócio esperadas.
-  - *Conceito:* **Checked Exceptions vs Unchecked Exceptions.** O compilador deve forçar a captura ou declaração (`throws`), garantindo que a interface do usuário trate a situação explicitamente.
-  - *Guia Relacionado:* `guias/05-excecoes-de-dominio-e-propagacao.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/excecao/ExemploExcecaoChecada.java`
-- [ ] **Tarefa 5.2: Criar exceções para itens ou registros não encontrados**
-  - *Descrição:* Exceções checadas para buscas por identificador ausente.
+### Fase 4 — Exceções de Domínio Personalizadas (Checked Exceptions)
+- [ ] **Tarefa 4.1:** Criar a classe `ItemJaEmprestadoException` estendendo diretamente `Exception`:
+  - Construtor recebendo o código do item e mensagem descritiva.
+  - Força a checagem obrigatória em tempo de compilação quando alguém tentar emprestar um item ocupado.
+- [ ] **Tarefa 4.2:** Criar exceções checadas auxiliares para tratamento robusto:
+  - `ItemNaoEncontradoException`: lançada quando um código de item inexistente for consultado.
+  - `PessoaNaoEncontradaException`: lançada quando uma matrícula não constar na base.
+  - `FormatoArquivoInvalidoException`: lançada ao encontrar linhas corrompidas no CSV.
+- 📖 *Caderno Didático:* `guias/05-excecoes-de-dominio-e-propagacao.md`
+- 💻 *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/excecao/ExemploExcecaoChecada.java`
 
 ---
 
-## Fase 6 — Persistência Manual em Arquivos de Texto (CSV)
-- [ ] **Tarefa 6.1: Criar interfaces de Repositório (DAO)**
-  - *Descrição:* Declarar contratos de acesso a dados (listar, buscar por id, salvar, atualizar).
-  - *Conceito:* **Princípio da Inversão de Dependência (DIP).** A regra de negócio não depende de arquivos ou bancos, mas de uma abstração.
-  - *Guia Relacionado:* `guias/10-arquitetura-camadas-e-injecao-dependencias.md`
-- [ ] **Tarefa 6.2: Implementar leitor CSV com `BufferedReader`**
-  - *Descrição:* Ler arquivo linha a linha com `try-with-resources`, descartar linhas em branco e comentários iniciados por `#`, e fazer parse dos campos com `split(";")`.
-  - *Guia Relacionado:* `guias/04-persistencia-csv-sem-frameworks.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/csv/ExemploLeituraGravacaoCSV.java`
-- [ ] **Tarefa 6.3: Implementar gravador CSV com `BufferedWriter`**
-  - *Descrição:* Gravar novos registros formatando campos delimitados por `;` com `newLine()` e `flush()`.
-  - *Critério de Aceitação:* O arquivo de texto resultante deve ser legível por editores e ferramentas de planilha sem corrupção de caracteres UTF-8.
+### Fase 5 — Persistência Manual em Arquivo Texto (CSV)
+- [ ] **Tarefa 5.1:** Definir os contratos das interfaces de repositório:
+  - `IRepositorioAcervo`: listar todos, buscar por código, salvar/atualizar item.
+  - `IRepositorioPessoas`: listar todas, buscar por matrícula.
+- [ ] **Tarefa 5.2:** Implementar `RepositorioAcervoArquivo` com leitura/escrita manual:
+  - Utilizar `BufferedReader` com `try-with-resources` e `StandardCharsets.UTF_8`.
+  - Processar cada linha com `split(";")`.
+  - Ignorar linhas vazias e comentários iniciados com `#`.
+  - Instanciar a subclasse correta (`Notebook`, `Projetor`, `KitComponentes`) de acordo com a coluna do tipo.
+  - Gravar novos itens no disco utilizando `BufferedWriter`.
+- [ ] **Tarefa 5.3:** Implementar `RepositorioPessoasArquivo` para leitura de usuários no CSV.
+- ⚠️ *Aviso Didático:* Proibido o uso de banco de dados (SQLite, H2, PostgreSQL) e de bibliotecas externas (Gson, Jackson, Hibernate). Persistência pura via `java.io`.
+- 📖 *Caderno Didático:* `guias/04-persistencia-csv-sem-frameworks.md`
+- 💻 *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/csv/ExemploLeituraGravacaoCSV.java`
 
 ---
 
-## Fase 7 — Camada de Serviço e Inversão de Dependências
-- [ ] **Tarefa 7.1: Criar a classe de serviço com injeção de dependências por construtor**
-  - *Descrição:* O serviço deve receber as instâncias de repositório em seu construtor, sem nunca executar `new RepositorioArquivo()` dentro de si.
-  - *Guia Relacionado:* `guias/10-arquitetura-camadas-e-injecao-dependencias.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/arquitetura/ExemploInjecaoDependenciasCamadas.java`
-- [ ] **Tarefa 7.2: Implementar proteção de coleções contra mutação externa**
-  - *Descrição:* Métodos que retornam listas (ex.: `listarItens()`, `listarEmprestimos()`) devem retornar `Collections.unmodifiableList(...)`.
-  - *Conceito:* **Cópia Defensiva e Encapsulamento.** Evita que consumidores externos manipulem o estado interno do serviço via `lista.clear()` ou `lista.add()`.
-  - *Guia Relacionado:* `guias/03-colecoes-e-defensive-copying.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/colecoes/ExemploColecoesProtegidas.java`
-- [ ] **Tarefa 7.3: Implementar filtros, buscas e acumuladores**
-  - *Descrição:* Criar métodos para buscar por critério, filtrar apenas itens disponíveis e acumular o somatório total de multas em atraso com Streams API.
+### Fase 6 — Camada de Serviço e Proteção de Coleções
+- [ ] **Tarefa 6.1:** Criar a interface `IServicoEmprestimo` e a classe `ServicoEmprestimo`:
+  - Aplicar Injeção de Dependências pelo construtor (recebendo `IRepositorioAcervo` e `IRepositorioPessoas`).
+- [ ] **Tarefa 6.2:** Implementar as operações de negócio no serviço:
+  - `registrarEmprestimo(codigoItem, matricula)`: busca o item e a pessoa; verifica se o item já está emprestado; se estiver, lança `ItemJaEmprestadoException`; caso contrário, marca como emprestado e cria o `Emprestimo`.
+  - `registrarDevolucao(codigoItem)`: localiza o empréstimo ativo; calcula a multa caso haja atraso utilizando a estratégia do item; marca o item como disponível e atualiza o acervo.
+- [ ] **Tarefa 6.3:** Garantir proteção de coleções com Cópia Defensiva:
+  - Métodos `listarItens()` e `listarEmprestimos()` devem retornar coleções envelopadas com `Collections.unmodifiableList(...)`.
+- 📖 *Cadernos Didáticos:* `guias/03-colecoes-e-defensive-copying.md` e `guias/06-camada-de-servico-e-injecao-dependencias.md`
+- 💻 *Exemplos de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/colecoes/ExemploColecoesProtegidas.java` e `src/main/java/br/edu/ifpb/didatico/exemplos/arquitetura/ExemploInjecaoDependenciasCamadas.java`
 
 ---
 
-## Fase 8 — Testes Automatizados e Execução no Terminal (Fim da Etapa 1)
-- [ ] **Tarefa 8.1: Escrever suíte de testes com JUnit 5**
-  - *Descrição:* Testar isoladamente: estratégias de multa, invariantes, empréstimo com sucesso, disparo da exceção checada ao tentar emprestar duplicado, e devolução.
-  - *Exemplo de Apoio:* `src/test/java/br/edu/ifpb/didatico/exemplos/ExemplosDidaticosTest.java`
-- [ ] **Tarefa 8.2: Implementar classe de demonstração no Terminal**
-  - *Descrição:* Implementar o roteiro oficial de testes imprimindo o acervo, executando um empréstimo, demonstrando a captura da exceção e exibindo a devolução.
-- [ ] **Tarefa 8.3: Criar tag Git e script de execução**
-  - *Descrição:* Gerar tag `v1.0-etapa1-modelo` e script `executar-etapa1.sh`.
+### Fase 7 — Demonstração do Roteiro no Terminal e Entrega da Etapa 1
+- [ ] **Tarefa 7.1:** Criar a classe executável `terminal.PrincipalTerminal` com método `main`:
+  - Executar os 6 passos determinísticos da Seção 7 do documento de instruções:
+    1. Exibir todos os itens lidos de `dados/acervo.csv` (todos inicialmente disponíveis).
+    2. Exibir todas as pessoas lidas de `dados/pessoas.csv`.
+    3. Registrar um empréstimo válido (ex.: Notebook para um estudante).
+    4. Tentar registrar novo empréstimo para o mesmo Notebook, capturando a `ItemJaEmprestadoException` no bloco `catch` e exibindo mensagem amigável no console sem travar o programa.
+    5. Realizar a devolução com simulação de atraso, exibindo o cálculo correto da multa polimórfica.
+    6. Exibir o estado final do acervo e histórico de empréstimos.
+- [ ] **Tarefa 7.2:** Criar o script shell `executar-etapa1.sh`:
+  - Compilar com `javac -d bin -encoding UTF-8 -cp src $(find src -name "*.java")`.
+  - Executar com `java -cp bin terminal.PrincipalTerminal`.
+- [ ] **Tarefa 7.3:** Formalizar o versionamento Git da Etapa 1:
+  - Comitar alterações: `git commit -m "feat(etapa-1): modelo OO, persistencia CSV e roteiro terminal"`.
+  - Criar branch: `git branch etapa-1-terminal`.
+  - Criar tag oficial: `git tag v1.0-etapa1-modelo`.
+- 📖 *Caderno Didático:* `guias/07-compilacao-manual-e-execucao-terminal.md`
 
 ---
 
-## Fase 9 — Arquitetura da Interface Gráfica JavaFX e FXML
-- [ ] **Tarefa 9.1: Adicionar dependências JavaFX e plugin ao `pom.xml`**
-  - *Descrição:* Incluir `javafx-controls`, `javafx-fxml`, `javafx-graphics`, `javafx-base` e o `javafx-maven-plugin`.
-- [ ] **Tarefa 9.2: Implementar classe de ciclo de vida `Application` e bootstrap**
-  - *Descrição:* Criar classe herdando de `javafx.application.Application` carregando o arquivo `.fxml` principal, e um `AppLauncher` auxiliar para contornar restrições de inicialização em classpath aberto.
-  - *Guia Relacionado:* `guias/06-javafx-arquitetura-fxml-e-mvc.md`
-- [ ] **Tarefa 9.3: Modelar os arquivos declarativos FXML**
-  - *Descrição:* Criar a interface mestre (`JanelaPrincipal.fxml`) contendo tabelas e rodapé de métricas, desacoplada do código Java.
+# ETAPA 2 — Configuração do Maven e Interface Gráfica JavaFX
 
 ---
 
-## Fase 10 — Componentes Avançados, Modais, Concorrência e Estilos (Fim da Etapa 2)
-- [ ] **Tarefa 10.1: Configurar `TableView` com Cell Value Factories e Badges**
-  - *Descrição:* Mapear atributos das entidades nas colunas da tabela e customizar células para exibir indicadores visuais (ex.: verde para disponível, vermelho para emprestado).
-  - *Guia Relacionado:* `guias/07-javafx-tabelas-e-cell-factories.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploTabelaEModalJavaFX.java`
-- [ ] **Tarefa 10.2: Implementar janelas modais separadas**
-  - *Descrição:* Criar modais bloqueantes com `Modality.APPLICATION_MODAL` para realização de novos empréstimos e cadastro de itens no acervo.
-  - *Guia Relacionado:* `guias/08-javafx-modais-e-caixas-de-dialogo.md`
-- [ ] **Tarefa 10.3: Tratar exceções de domínio com caixas de diálogo `Alert`**
-  - *Descrição:* Ao chamar o serviço a partir do controlador JavaFX, envolver a chamada em bloco `try/catch` e exibir a mensagem de erro através de `Alert(AlertType.ERROR)`.
-- [ ] **Tarefa 10.4: Garantir Concorrência e Thread Safety em Operações Longas**
-  - *Descrição:* Utilizar `javafx.concurrent.Task<V>` e `Platform.runLater()` para operações assíncronas que leem arquivos ou calculam relatórios, vinculando o progresso a `ProgressBar`.
-  - *Guia Relacionado:* `guias/09-javafx-concorrencia-e-thread-safety.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploConcorrenciaJavaFX.java`
-- [ ] **Tarefa 10.5: Implementar Data Binding Reativo para Validação de Telas**
-  - *Descrição:* Desabilitar botões de ação enquanto os campos estiverem em branco via `button.disableProperty().bind(...)`, e conectar sliders e labels reativos.
-  - *Guia Relacionado:* `guias/11-javafx-properties-e-data-binding.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploDataBindingJavaFX.java`
-- [ ] **Tarefa 10.6: Criar folha de estilos CSS e script de execução da Etapa 2**
-  - *Descrição:* Desenvolver arquivo `styles.css` customizando botões, tabelas e cabeçalhos, e criar script `executar-etapa2.sh`.
-- [ ] **Tarefa 10.7: Gerar tag Git e branch de entrega**
-  - *Descrição:* Registrar tag `v2.0-etapa2-javafx` e branch `etapa-2-javafx`.
+### Fase 8 — Introdução e Configuração do Maven para o JavaFX
+- [ ] **Tarefa 8.1:** Criar o arquivo `pom.xml` na raiz do projeto exclusivamente para gerenciar as dependências modulares do OpenJFX 21:
+  - Dependências: `javafx-controls`, `javafx-fxml`, `javafx-graphics`, `javafx-base` (versão 21.0.2).
+  - Plugin do compilador: `maven-compiler-plugin` com Java 21 LTS (`UTF-8`).
+  - Plugin de execução gráfica: `javafx-maven-plugin` apontando para a classe de inicialização.
+- [ ] **Tarefa 8.2:** Organizar a estrutura de diretórios para o padrão Maven:
+  - `src/main/java/`: código Java (reaproveitando integralmente os pacotes de modelo, persistência e serviço da Etapa 1).
+  - `src/main/resources/fxml/`: arquivos de layout de tela `.fxml`.
+  - `src/main/resources/css/`: folha de estilo visual `styles.css`.
+- ⚠️ *Aviso Didático:* Nenhuma dependência de testes (JUnit) ou framework extra é adicionada ao `pom.xml`.
+- 📖 *Caderno Didático:* `guias/08-configuracao-maven-para-javafx.md`
 
 ---
 
-## Fase 11 — Modern Java 21 LTS: Records, Sealed Types e Pattern Matching
-- [ ] **Tarefa 11.1: Modelar DTOs e Value Objects com Records e Construtor Compacto**
-  - *Descrição:* Substituir DTOs verbosos por `record`, aplicando validação de invariantes no construtor compacto e garantindo imutabilidade defensiva profunda.
-  - *Guia Relacionado:* `guias/12-java21-records-pattern-matching-e-sealed-types.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/moderno/ExemploJavaModernoRecordESealed.java`
-- [ ] **Tarefa 11.2: Implementar Hierarquias Seladas (`sealed` interfaces e classes)**
-  - *Descrição:* Fechar a hierarquia de resultados de operações ou estados de negócio com a cláusula `permits`.
-- [ ] **Tarefa 11.3: Tratar resultados com Pattern Matching Switch e Guards (`when`)**
-  - *Descrição:* Substituir cascades de `if/else` ou switches tradicionais com cláusula `default` por avaliação exaustiva de padrões do Java 21.
+### Fase 9 — Arquitetura JavaFX, FXML Declarativo e MVC Desacoplado
+- [ ] **Tarefa 9.1:** Criar a classe `AppLauncher` (classe padrão que não herda de `Application` para evitar conflitos de módulo na JVM) que chama `AppJavaFX.main(args)`.
+- [ ] **Tarefa 9.2:** Criar a classe `AppJavaFX` estendendo `javafx.application.Application`:
+  - No método `init()`, instanciar os repositórios CSV e o `ServicoEmprestimo`.
+  - No método `start(Stage primaryStage)`, carregar `JanelaPrincipal.fxml`, aplicar folha de estilo e exibir a janela com título e dimensões adequadas.
+- [ ] **Tarefa 9.3:** Desenhar a tela principal declarativa em `src/main/resources/fxml/JanelaPrincipal.fxml`:
+  - Barra superior de títulos e ações.
+  - Tabela central `TableView` listando os itens do acervo com colunas formatadas.
+  - Botões para "Novo Empréstimo", "Devolver Item", "Cadastrar Novo Item" e "Atualizar Tabela".
+- [ ] **Tarefa 9.4:** Implementar o controlador `JanelaPrincipalControlador`:
+  - Injetar nós da interface com a anotação `@FXML`.
+  - Implementar método `initialize()` configurando as colunas e associando a lista observável (`ObservableList`).
+  - Vincular eventos de clique dos botões (`onAction`).
+- 📖 *Caderno Didático:* `guias/09-javafx-arquitetura-fxml-e-mvc.md`
 
 ---
 
-## Fase 12 — Estilização Profissional com CSS, Pseudo-Classes e Temas
-- [ ] **Tarefa 12.1: Eliminar 100% de estilos inline (`setStyle`) dos controladores**
-  - *Descrição:* Migrar todas as regras de formatação, cores e fontes para arquivos `.css` dedicados em `src/main/resources/css/`.
-  - *Guia Relacionado:* `guias/13-javafx-css-seletores-e-temas-dinamicos.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploCssETemasJavaFX.java`
-- [ ] **Tarefa 12.2: Implementar Pseudo-Classes Customizadas em Tabelas**
-  - *Descrição:* Usar `PseudoClass.getPseudoClass(...)` e `node.pseudoClassStateChanged(...)` para indicar atrasos e status dinâmicos em linhas de `TableView`.
-- [ ] **Tarefa 12.3: Implementar Alternância Dinâmica de Temas (Light / Dark Mode)**
-  - *Descrição:* Permitir ao usuário alternar instantaneamente entre `tema-claro.css` e `tema-escuro.css` manipulando `scene.getStylesheets()`.
+### Fase 10 — Componentes Visuais (TableView), Modais de Ação, Alertas e Entrega da Etapa 2
+- [ ] **Tarefa 10.1:** Configurar a `TableView` com `CellValueFactory`:
+  - Mapear código, descrição, tipo e situação do equipamento.
+  - Atualizar os dados automaticamente após cada operação de empréstimo ou devolução.
+- [ ] **Tarefa 10.2:** Implementar telas modais com bloqueio da janela de fundo:
+  - `ModalEmprestimo.fxml` e `ModalEmprestimoControlador`: seleção do item e usuário para registro de novo empréstimo com `Modality.APPLICATION_MODAL`.
+  - `ModalCadastroItem.fxml` e `ModalCadastroItemControlador`: formulário para cadastrar novos equipamentos (Notebook, Projetor ou Kit) no arquivo `dados/acervo.csv`.
+- [ ] **Tarefa 10.3:** Implementar captura gráfica de exceções com diálogo `Alert`:
+  - Ao tentar emprestar um item ocupado, capturar a exceção checada `ItemJaEmprestadoException`.
+  - Exibir imediatamente um alerta amigável na tela usando `new Alert(AlertType.ERROR)` com título, cabeçalho e descrição do erro.
+  - Tratar dados inválidos nos formulários exibindo `Alert(AlertType.WARNING)`.
+- [ ] **Tarefa 10.4:** Estilizar a interface com CSS limpo em `src/main/resources/css/styles.css`:
+  - Customização de botões, cabeçalhos de tabela e destaque de status (disponível vs. emprestado).
+- [ ] **Tarefa 10.5:** Criar o script facilitador `executar-etapa2.sh`:
+  - Comando: `mvn clean javafx:run`.
+- [ ] **Tarefa 10.6:** Formalizar o versionamento Git da Etapa 2:
+  - Comitar alterações: `git commit -m "feat(etapa-2): interface desktop JavaFX, FXML desacoplado, modais e alertas"`.
+  - Criar branch: `git branch etapa-2-javafx`.
+  - Criar tag oficial: `git tag v2.0-etapa2-javafx`.
+- 📖 *Caderno Didático:* `guias/10-javafx-tabelas-modais-e-alertas.md`
+- 💻 *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploTabelaEModalJavaFX.java`
 
 ---
 
-## Fase 13 — Arquitetura de Navegação, Padrão Shell e Diálogos Tipados
-- [ ] **Tarefa 13.1: Implementar o Layout Mestre Shell com Container Dinâmico**
-  - *Descrição:* Estruturar a janela principal em `BorderPane`, mantendo sidebar fixa e trocando o painel `center` sob demanda.
-  - *Guia Relacionado:* `guias/14-javafx-navegacao-e-troca-de-telas.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploNavegacaoJavaFX.java`
-- [ ] **Tarefa 13.2: Implementar Injeção Tipada de Parâmetros entre Controladores**
-  - *Descrição:* Transmitir objetos selecionados entre a visão mestre e a visão de detalhes via método tipado (`inicializarComDados(item)`).
-- [ ] **Tarefa 13.3: Implementar Diálogos Modais Tipados com `Dialog<R>`**
-  - *Descrição:* Substituir modais com estados compartilhados por instâncias de `Dialog<R>` com `setResultConverter` retornando `Optional<R>`.
+## 🎯 Rastreabilidade Direta com os Parâmetros da Instrução
 
----
-
-## Fase 14 — Validação Reativa de Formulários e Safe Parsing (UX/UI)
-- [ ] **Tarefa 14.1: Implementar Conversão Segura Preventiva (Safe Parsing)**
-  - *Descrição:* Criar métodos estáticos defensivos que convertem entradas de texto para `BigDecimal` e inteiros retornando `Optional`, prevenindo `NumberFormatException`.
-  - *Guia Relacionado:* `guias/15-javafx-validacao-formularios-e-feedback-visual.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploValidacaoFormularioJavaFX.java`
-- [ ] **Tarefa 14.2: Implementar Feedback Visual Amigável (Pristine vs. Dirty)**
-  - *Descrição:* Validar visualmente os campos apenas após a perda de foco (`focusedProperty()`), evitando telas que nascem todas vermelhas.
-- [ ] **Tarefa 14.3: Conectar Validação Global ao Botão de Submissão**
-  - *Descrição:* Criar `BooleanBinding` composto para manter o botão `Salvar` desabilitado até que todos os campos estejam matematicamente íntegros.
-
----
-
-## Fase 15 — Testabilidade Arquitetural com Fakes em Memória
-- [ ] **Tarefa 15.1: Criar Repositório Fake em Memória para Testes Unitários**
-  - *Descrição:* Implementar o contrato `IRepositorio` com `ConcurrentHashMap`, permitindo suítes de teste sem I/O de disco.
-  - *Guia Relacionado:* `guias/16-testes-unitarios-e-testabilidade-com-fakes.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/teste/ExemploTestabilidadeComFake.java`
-- [ ] **Tarefa 15.2: Testar Regras de Negócio Críticas em Microssegundos**
-  - *Descrição:* Escrever testes automatizados JUnit 5 cobrindo regras de limites máximos por pessoa, colisões de estado e reversão de operações.
-
----
-
-## Fase 16 — Filtros Dinâmicos, Ordenação com SortedList e Ações em TableView
-- [ ] **Tarefa 16.1: Implementar o Pipeline Reativo em Tabelas**
-  - *Descrição:* Envelopar a lista mestre em `FilteredList` e `SortedList`, conectando `sortedList.comparatorProperty().bind(tabela.comparatorProperty())` para preservar a ordenação ao filtrar.
-  - *Guia Relacionado:* `guias/17-javafx-filtros-ordenacao-e-acoes-em-tabelas.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploFiltroEOrdenacaoJavaFX.java`
-- [ ] **Tarefa 16.2: Combinar Filtro Textual e Filtro de Estado (ComboBox)**
-  - *Descrição:* Construir predicado composto dinâmico atualizado via listeners nos controles de entrada da UI, sem nunca limpar ou repovoar a lista manualmente.
-- [ ] **Tarefa 16.3: Criar Coluna de Ações com Botões Customizados em TableCell**
-  - *Descrição:* Implementar botões (ex.: Devolver, Excluir) dentro das linhas da tabela, associando diálogos de confirmação (`Alert.AlertType.CONFIRMATION`) antes de executar mutações.
-
----
-
-## Fase 17 — Persistência Segura com Gravação Atômica, Backup e Concorrência
-- [ ] **Tarefa 17.1: Implementar o Padrão Safe Atomic Write em Repositório CSV**
-  - *Descrição:* Escrever registros inicialmente em arquivo temporário (`.tmp`) no mesmo diretório e substituir o arquivo original via `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)`.
-  - *Guia Relacionado:* `guias/18-persistencia-atomica-backup-e-locks.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/csv/ExemploPersistenciaAtomicaComLock.java`
-- [ ] **Tarefa 17.2: Implementar Rotina de Backup Automático (.bak) e Recuperação**
-  - *Descrição:* Gerar cópia de segurança antes de sobrescrever o arquivo oficial e prover rotina para restauração em caso de corrupção ou apagamento acidental.
-- [ ] **Tarefa 17.3: Orquestrar Concorrência com `ReentrantReadWriteLock`**
-  - *Descrição:* Proteger o repositório permitindo leituras simultâneas (`readLock`) e isolamento estrito durante gravações (`writeLock`).
-
----
-
-## Fase 18 — Barramento de Eventos (EventBus) e Desacoplamento entre Telas
-- [ ] **Tarefa 18.1: Implementar o `AppEventBus` Thread-Safe**
-  - *Descrição:* Criar barramento centralizado em memória com método `inscrever(tipoEvento, consumidor)` retornando token de cancelamento para prevenir vazamento de memória (Memory Leaks).
-  - *Guia Relacionado:* `guias/19-event-bus-e-comunicacao-desacoplada-entre-controladores.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploEventBusDesacoplado.java`
-- [ ] **Tarefa 18.2: Modelar Eventos de Domínio com Records Imutáveis do Java 21**
-  - *Descrição:* Declarar eventos de notificação como records (ex.: `ItemCadastradoEvent`, `ItemExcluidoEvent`), garantindo que o estado não seja corrompido entre consumidores.
-- [ ] **Tarefa 18.3: Integrar Despacho Automático na UI Thread**
-  - *Descrição:* Fazer com que o barramento verifique `Platform.isFxApplicationThread()` e despache notificações via `Platform.runLater()` automaticamente.
-
----
-
-## Fase 19 — Manipulação de Datas Modernas (`java.time`) e Regras Temporais
-- [ ] **Tarefa 19.1: Integrar `DatePicker` com Conversor Formatado em Padrão Brasileiro**
-  - *Descrição:* Configurar `StringConverter<LocalDate>` para exibir e receber datas no formato `dd/MM/yyyy`, tratando parsing defensivamente sem estourar exceções.
-  - *Guia Relacionado:* `guias/20-javafx-datas-datepicker-e-regras-temporais.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploDataPickerERegrasTemporaisJavaFX.java`
-- [ ] **Tarefa 19.2: Bloquear Datas Inválidas no Calendário com `DayCellFactory`**
-  - *Descrição:* Desabilitar visualmente no calendário datas anteriores ao início do empréstimo e destacar finais de semana.
-- [ ] **Tarefa 19.3: Implementar Cálculo de Atrasos, Dias Úteis e Multas Regulamentares**
-  - *Descrição:* Criar utilitário temporal com `ChronoUnit.DAYS.between()`, cálculo de dias úteis e projeção de penalidades com carência regulamentar.
-
----
-
-## Fase 20 — Dashboards Executivos, Métricas Agregadas e Gráficos (`PieChart` e `BarChart`)
-- [ ] **Tarefa 20.1: Implementar Agregações com Streams API e Coletores Avançados**
-  - *Descrição:* Criar métodos no serviço analítico utilizando `Collectors.groupingBy()`, `Collectors.counting()`, `Collectors.reducing()` e `Collectors.partitioningBy()` para consolidar resumos e taxas de ocupação sem laços imperativos.
-  - *Guia Relacionado:* `guias/21-javafx-dashboards-metricas-e-graficos.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploDashboardGraficosJavaFX.java`
-- [ ] **Tarefa 20.2: Construir Gráfico de Setores (`PieChart`) com Proporções e Tooltips**
-  - *Descrição:* Mapear dados agregados em instâncias de `PieChart.Data`, instalando `Tooltip` com percentuais calculados e formatação defensiva para coleções vazias.
-- [ ] **Tarefa 20.3: Construir Gráfico de Barras (`BarChart`) para Comparação Patrimonial**
-  - *Descrição:* Configurar `CategoryAxis`, `NumberAxis` e `XYChart.Series` para comparar investimentos e quantitativos entre categorias do acervo.
-
----
-
-## Fase 21 — Padrão GoF Command, Histórico Reversível (Undo / Redo) e Atalhos de Teclado
-- [ ] **Tarefa 21.1: Modelar o Contrato `IComando` e Comandos Reversíveis Autocontidos**
-  - *Descrição:* Criar interface com `executar()`, `desfazer()` e `getDescricao()`, implementando comandos de cadastro, remoção com preservação de índice e alteração de status.
-  - *Guia Relacionado:* `guias/22-padrao-command-undo-redo-e-historico.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploCommandUndoRedoJavaFX.java`
-- [ ] **Tarefa 21.2: Implementar Gerenciador de Histórico com Pilhas Duplas (`Deque`) e Guarda de Memória**
-  - *Descrição:* Orquestrar pilhas `ArrayDeque` para Undo e Redo, limpando Redo a cada nova ação e limitando o tamanho da pilha em memória RAM.
-- [ ] **Tarefa 21.3: Conectar Botões com Data Binding e Atalhos Universais no Palco**
-  - *Descrição:* Conectar `btnDesfazer.disableProperty()` a `podeDesfazerProperty().not()`, e registrar aceleradores `KeyCodeCombination` com `KeyCombination.SHORTCUT_DOWN` para `Ctrl+Z` e `Ctrl+Y`.
-
----
-
-## Fase 22 — Exportação de Relatórios, Recibos Formatados e Diálogos Nativos (`FileChooser`)
-- [ ] **Tarefa 22.1: Implementar Formatador Textual Monoespaçado Determinístico**
-  - *Descrição:* Construir gerador de comprovantes com molduras divisórias em ASCII, colunas em largura fixa (`String.format`), sumário financeiro com `BigDecimal` e chave criptográfica de integridade SHA-256.
-  - *Guia Relacionado:* `guias/23-exportacao-relatorios-recibos-e-filechooser.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploExportacaoRelatoriosEFileChooserJavaFX.java`
-- [ ] **Tarefa 22.2: Implementar Exportação Tabular em CSV**
-  - *Descrição:* Exportar dados de movimentação em formato delimitado por `;` legível por planilhas e editores com encoding UTF-8.
-- [ ] **Tarefa 22.3: Integrar Diálogo Nativo `FileChooser` com Cancelamento Gracioso**
-  - *Descrição:* Configurar filtros de extensão, sugerir nomes com timestamp, lembrar último diretório e proteger a aplicação contra retornos nulos (`arquivoDestino == null`).
-
----
-
-## Fase 23 — Resiliência Operacional, Tratamento Global de Falhas e Logs de Diagnóstico
-- [ ] **Tarefa 23.1: Instalar Tratador Global de Falhas (`UncaughtExceptionHandler`)**
-  - *Descrição:* Configurar `Thread.setDefaultUncaughtExceptionHandler` no ponto de entrada da aplicação para interceptar qualquer falha não prevista na JVM.
-  - *Guia Relacionado:* `guias/24-resiliencia-global-uncaught-exceptions-e-logs.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/javafx/ExemploTratamentoGlobalErrosJavaFX.java`
-- [ ] **Tarefa 23.2: Despachar Diálogo de Erro Expansível na UI Thread**
-  - *Descrição:* Apresentar mensagem amigável para o usuário comum e disponibilizar o rastreamento completo de pilha (Stack Trace) em painel colapsável (`TextArea`), garantindo o despacho via `Platform.runLater()`.
-- [ ] **Tarefa 23.3: Gravar Logs de Diagnóstico em Disco com Auditoria Concorrente**
-  - *Descrição:* Registrar append-only em `app-erros.log` com timestamp ISO-8601, nome da thread causadora, classe da exceção e rastreamento completo para análise pós-morte.
-
----
-
-## Fase 24 — Padrão GoF State e Ciclo de Vida de Entidades de Domínio
-- [ ] **Tarefa 24.1: Modelar a interface de estado `IEstadoRecurso` com métodos default**
-  - *Descrição:* Definir ações do ciclo de vida (`emprestar`, `devolver`, `enviarParaManutencao`, `concluirManutencao`, `baixarPatrimonio`) com rejeição padrão via `TransicaoEstadoInvalidaException`.
-  - *Guia Relacionado:* `guias/25-padrao-state-maquina-de-estados-e-ciclo-de-vida.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/state/ExemploStateCicloVida.java`
-- [ ] **Tarefa 24.2: Implementar Estados Concretos e Entidade de Contexto**
-  - *Descrição:* Criar estados `Disponivel`, `Emprestado`, `EmManutencao` e `Baixado` (terminal), e a entidade de contexto delegando todas as operações para o estado ativo.
-- [ ] **Tarefa 24.3: Conectar a Máquina de Estados a Botões Reativos da UI JavaFX**
-  - *Descrição:* Vincular a habilitação de botões (`btnEmprestar.setDisable(!estado.permiteEmprestimo())`) e badges visuais ao estado da entidade selecionada na `TableView`.
-
----
-
-## Fase 25 — Padrão GoF Builder, Invariantes e Formulários Wizard
-- [ ] **Tarefa 25.1: Modelar Entidade com Construtor Privado e Builder Estático Aninhado**
-  - *Descrição:* Estruturar classe de domínio com múltiplos atributos (obrigatórios e opcionais) garantindo que ninguém consiga instanciá-la sem passar pelo Builder.
-  - *Guia Relacionado:* `guias/26-padrao-builder-invariantes-e-formularios-wizard.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/builder/ExemploBuilderInvariantesEWizard.java`
-- [ ] **Tarefa 25.2: Implementar Fluent API e Validação Atômica no `.build()`**
-  - *Descrição:* Encadear métodos `.comIdentificacao()`, `.comValor()`, `.alocadoEm()` e validar todas as invariantes e regras de consistência mútua no método `.build()`.
-- [ ] **Tarefa 25.3: Integrar o Builder a Formulários Multi-etapas (*Wizards*) no JavaFX**
-  - *Descrição:* Acumular dados preenchidos em diferentes abas ou telas sequenciais na instância do Builder antes de construir o objeto de domínio de forma atômica no botão de conclusão.
-
----
-
-## Fase 26 — Padrão GoF Template Method e Processamento em Lote (Batch Import)
-- [ ] **Tarefa 26.1: Criar a Superclasse Abstrata `ImportadorLoteAbstrato<T>`**
-  - *Descrição:* Definir o esqueleto invariante do algoritmo de importação em método `final`, abrindo arquivo, iterando sobre linhas e gerenciando persistência e auditoria.
-  - *Guia Relacionado:* `guias/27-padrao-template-method-e-importacao-em-lote.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/templatemethod/ExemploTemplateMethodImportacaoLote.java`
-- [ ] **Tarefa 26.2: Implementar Hooks Abstratos para Parse e Validação de Domínio**
-  - *Descrição:* Delegar para subclasses especializadas os métodos `validarCabecalho()`, `parseLinha()` e `validarEntidade()`.
-- [ ] **Tarefa 26.3: Coletar Falhas Linha a Linha de Forma Resiliente e Conectar com JavaFX**
-  - *Descrição:* Tratar erros de parsing individuais sem abortar o processamento do restante do arquivo, catalogando `FalhaLinha` e emitindo callbacks para `ProgressBar` em `Task<V>`.
-
----
-
-## Fase 27 — Padrão GoF Memento, Persistência de Preferências e Sessão de Usuário
-- [ ] **Tarefa 27.1: Modelar o Snapshot Imutável `EstadoJanelaMemento` como Record Java 21**
-  - *Descrição:* Capturar coordenadas (X, Y), largura, altura, estado maximizado, tema ativo e último diretório aberto.
-  - *Guia Relacionado:* `guias/28-padrao-memento-preferencias-e-sessao-javafx.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/memento/ExemploMementoEPreferenciasJavaFX.java`
-- [ ] **Tarefa 27.2: Implementar o `CaretakerPreferencias` Nativo**
-  - *Descrição:* Salvar e restaurar snapshots usando `java.util.prefs.Preferences` da plataforma Java e/ou arquivos `.properties` no diretório do usuário sem bibliotecas externas.
-- [ ] **Tarefa 27.3: Integrar ao Ciclo de Vida do JavaFX (`start()` e `setOnCloseRequest()`)**
-  - *Descrição:* Restaurar layout e tema ao iniciar a aplicação e gravar snapshot automaticamente ao fechar o palco principal.
-
----
-
-## Fase 28 — Padrão GoF Composite e Hierarquias de Domínio no JavaFX (`TreeView` e `TreeCell`)
-- [ ] **Tarefa 28.1: Modelar a Hierarquia de Domínio em Árvore com Padrão Composite**
-  - *Descrição:* Criar superclasse abstrata `ComponentePatrimonial`, elemento folha `ItemFolha` e nó composto `CategoriaComposta` com validação defensiva anti-loop e coleções imutáveis.
-  - *Guia Relacionado:* `guias/29-padrao-composite-hierarquias-de-dominio-e-treeview.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/composite/ExemploCompositeETreeView.java`
-- [ ] **Tarefa 28.2: Implementar Operações Recursivas Uniformes de Agregação**
-  - *Descrição:* Desenvolver métodos polimórficos `calcularValorTotal()` e `contarItensFisicos()` executados recursivamente sem `instanceof`.
-- [ ] **Tarefa 28.3: Integrar com `TreeView` e `TreeCell` Customizado**
-  - *Descrição:* Mapear recursivamente para `TreeItem<ComponentePatrimonial>`, estilizando nós compostos (pastas) e folhas (itens) com badges e valores monetários.
-
----
-
-## Fase 29 — Padrão GoF Decorator e Composição Dinâmica de Tarifas e Regras em UI
-- [ ] **Tarefa 29.1: Definir Contrato do Componente Precificável e Implementação Base**
-  - *Descrição:* Criar interface `IServicoPrecificavel` e componente base `LocacaoBase` com cálculo de custo base e lista de discriminativos.
-  - *Guia Relacionado:* `guias/30-padrao-decorator-extensao-dinamica-e-tarifacao.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/decorator/ExemploDecoratorTarifacaoDinamica.java`
-- [ ] **Tarefa 29.2: Implementar Decorador Abstrato e Decoradores Concretos Especializados**
-  - *Descrição:* Construir `ServicoOpcionalDecorator`, `SeguroAvariaDecorator`, `HigienizacaoTecnicaDecorator` e `SuporteTecnico24hDecorator` acumulando custos e discriminativo transparente.
-- [ ] **Tarefa 29.3: Integrar com Seleção Interativa de Opcionais na UI JavaFX**
-  - *Descrição:* Conectar CheckBoxes para empilhar decoradores dinamicamente e recalcular totalizador e discriminativo via Data Binding reativo.
-
----
-
-## Fase 30 — Padrão GoF Chain of Responsibility e Pipelines de Auditoria e Validação
-- [ ] **Tarefa 30.1: Modelar o Manipulador Abstrato `ValidadorRequisicao` com Modos Duplos**
-  - *Descrição:* Implementar suporte a auditoria completa (coleta de todas as violações em `List<ViolacaoRegra>`) e modo Fail-Fast com exceção checada `RegraNegocioVioladaException`.
-  - *Guia Relacionado:* `guias/31-padrao-chain-of-responsibility-pipelines-e-autorizacao.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/chain/ExemploChainOfResponsibilityValidacao.java`
-- [ ] **Tarefa 30.2: Implementar Elos Concretos Especializados da Cadeia**
-  - *Descrição:* Construir validadores independentes para inadimplência/atraso, limite quantitativo de cota, teto financeiro patrimonial e equipamento restrito por perfil.
-- [ ] **Tarefa 30.3: Integrar ao Checklist Visual de Conformidade no JavaFX**
-  - *Descrição:* Desenvolver painel reativo com feedback visual verde/vermelho por critério regulamentar antes de liberar ações transacionais.
-
----
-
-## Fase 31 — Padrão GoF Adapter e Interoperabilidade com Fontes Legadas e Externas
-- [ ] **Tarefa 31.1: Modelar a Interface Canônica Local do Domínio (Target)**
-  - *Descrição:* Definir contrato `IItemCatalogoLocal` com métodos idiomáticos limpos desacoplados de fornecedores externos.
-  - *Guia Relacionado:* `guias/32-padrao-adapter-interoperabilidade-e-sistemas-legados.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/adapter/ExemploAdapterIntegracaoLegada.java`
-- [ ] **Tarefa 31.2: Implementar o Adaptador de Objeto (`AdaptadorItemLegado`)**
-  - *Descrição:* Encapsular `LegacyVendorItemDTO`, convertendo códigos primitivos, sanitizando texto, traduzindo centavos para `BigDecimal` e mapeando flags numéricas para booleanos.
-- [ ] **Tarefa 31.3: Conectar Catálogo Adaptado à `TableView` do JavaFX**
-  - *Descrição:* Exibir os dados legados adaptados na tabela consumindo exclusivamente o contrato canônico, preservando o isolamento arquitetural da interface gráfica.
-
----
-
-## Fase 32 — Padrão GoF Facade e Orquestração de Subsistemas Desktop
-- [ ] **Tarefa 32.1: Modelar Interfaces e Contratos dos Subsistemas Independentes**
-  - *Descrição:* Estruturar subsistemas autônomos para Validação de Usuário, Inventário/Estoque, Prazos/Regras, Auditoria Criptográfica SHA-256 e Notificação Digital.
-  - *Guia Relacionado:* `guias/33-padrao-facade-fachada-de-subsistemas-e-gateway-desktop.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/facade/ExemploFacadeSubsistemasDesktop.java`
-- [ ] **Tarefa 32.2: Implementar a Fachada `GestaoAlocacaoFacade` com Compensação Transacional (Rollback)**
-  - *Descrição:* Desenvolver ponto de entrada unificado que orquestra a sequência de alocação e estorna a reserva no estoque caso etapas subsequentes falhem.
-- [ ] **Tarefa 32.3: Integrar Ponto de Entrada Único ao Formulário Transacional JavaFX**
-  - *Descrição:* Conectar o controlador JavaFX à Fachada através de uma única invocação de método, exibindo recibo consolidado e logs em tempo real.
-
----
-
-## Fase 33 — Padrão GoF Mediator e Desacoplamento de Controles em Telas Complexas
-- [ ] **Tarefa 33.1: Modelar Contrato `IFormularioMediator` e Eventos de Interface**
-  - *Descrição:* Criar enum `EventoFormulario` e interface `IFormularioMediator` para centralizar as notificações entre widgets visuais.
-  - *Guia Relacionado:* `guias/34-padrao-mediator-orquestracao-de-componentes-javafx.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/mediator/ExemploMediatorFormularioJavaFX.java`
-- [ ] **Tarefa 33.2: Implementar `FormularioAlocacaoMediator` com Regras Centralizadas e Proteção Anti-Loop**
-  - *Descrição:* Centralizar regras de visibilidade, habilitação e prazos baseadas em perfil de solicitante (Estudante, Professor, Pesquisador) e flag booleana de atualização atômica.
-- [ ] **Tarefa 33.3: Conectar Controles JavaFX (`ComboBox`, `CheckBox`, `TextField`, `Button`) ao Mediator**
-  - *Descrição:* Vincular eventos de UI ao método `mediator.notificar(origem, evento)` garantindo que nenhum nó conheça referências dos demais.
-
----
-
-## Fase 34 — Padrão GoF Proxy, Lazy Loading e Caching Transparente de Recursos
-- [ ] **Tarefa 34.1: Definir a Interface Canônica do Sujeito `IRecursoDocumental`**
-  - *Descrição:* Declarar métodos para metadados leves (`getId()`, `getTitulo()`, `getTamanhoKb()`) e operações pesadas de I/O (`obterConteudoIntegral()`).
-  - *Guia Relacionado:* `guias/35-padrao-proxy-lazy-loading-e-cache-de-recursos.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/proxy/ExemploProxyLazyLoadingECache.java`
-- [ ] **Tarefa 34.2: Implementar Objeto Real Pesado e `ProxyDocumentoVirtual` com Double-Checked Locking**
-  - *Descrição:* Desenvolver proxy thread-safe com variável `volatile` que materializa o objeto real sob demanda na primeira chamada e atende requisições subsequentes via cache instantâneo (0 ms).
-- [ ] **Tarefa 34.3: Conectar Proxies à `TableView` JavaFX com Carregamento Sob Demanda em `Task<V>`**
-  - *Descrição:* Exibir catálogo com consumo mínimo de memória RAM inicial e acionar Lazy Loading em segundo plano via `Task<V>` sem congelar a UI Thread.
-
----
-
-## Fase 35 — Padrão GoF Observer Puro e Ponte Reativa com JavaFX (Clean Architecture)
-- [ ] **Tarefa 35.1: Modelar Contratos de Domínio Puro (`ISujeitoDominio`, `IObservadorDominio`, `EventoDominio`)**
-  - *Descrição:* Estruturar padrão Observer clássico no núcleo de negócio com zero dependências de pacotes gráficos (`javafx.*`).
-  - *Guia Relacionado:* `guias/36-padrao-observer-dominio-e-ponte-reativa-javafx.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/observer/ExemploObserverDominioEPonteJavaFX.java`
-- [ ] **Tarefa 35.2: Implementar o Gerenciador de Domínio com Regras e Alertas de Estoque Crítico**
-  - *Descrição:* Desenvolver operações puras de alocação, devolução e emissão de eventos tipados armazenados em lista thread-safe (`CopyOnWriteArrayList`).
-- [ ] **Tarefa 35.3: Desenvolver a `PonteReativaJavaFX` com Despacho Seguro via `Platform.runLater()`**
-  - *Descrição:* Construir adaptador na camada de apresentação que implementa `IObservadorDominio` e atualiza `ObservableList` e propriedades visuais na UI Thread sem riscos de concorrência.
-
----
-
-## Fase 36 — Padrão GoF Factory Method & Abstract Factory (Criação Polimórfica e Famílias de Componentes/Regras Desacopladas)
-- [ ] **Tarefa 36.1: Definir Contratos da Fábrica Abstrata (`IAmbienteOperacionalFactory`) e Família de Produtos**
-  - *Descrição:* Modelar produtos abstratos para Tarifação (`ICalculadoraTarifa`), Segurança (`IPoliticaSeguranca`) e Componentes Visuais (`IRenderizadorBadgeUI`).
-  - *Guia Relacionado:* `guias/37-padrao-factory-method-e-abstract-factory-familias-polimorficas.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/factory/ExemploAbstractFactoryETemasAmbiente.java`
-- [ ] **Tarefa 36.2: Implementar as Famílias Concretas Especializadas**
-  - *Descrição:* Criar fábricas concretas para os ambientes Educacional (descontos e limites acadêmicos), Corporativo (SLA 24h e teto expandido) e Industrial (seguro de risco e checagem rígida de NR-10/NR-12).
-- [ ] **Tarefa 36.3: Integrar ao Controlador JavaFX com Substituição Dinâmica de Famílias**
-  - *Descrição:* Conectar `ComboBox` ao provedor de fábricas polimórfico, atualizando a `TableView` e badges visuais sem nenhum bloco `if/else` no controlador.
-
----
-
-## Fase 37 — Padrão GoF Visitor (Operações Polimórficas Externas, Double Dispatch e Relatórios Desacoplados)
-- [ ] **Tarefa 37.1: Modelar Interfaces do Padrão Visitor (`IVisitorPatrimonial`, `IItemPatrimonial`)**
-  - *Descrição:* Declarar métodos de visitação sobrecarregados para cada tipo da hierarquia e método `accept(visitor)` nas entidades de domínio.
-  - *Guia Relacionado:* `guias/38-padrao-visitor-operacoes-polimorficas-e-double-dispatch.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/visitor/ExemploVisitorOperacoesPolimorficas.java`
-- [ ] **Tarefa 37.2: Implementar Visitors Especializados de Negócio**
-  - *Descrição:* Construir `VisitorCalculoDepreciacao` (depreciação contábil acumulada e valor residual) e `VisitorAuditoriaConformidade` (inspeção técnica sem poluir o modelo).
-- [ ] **Tarefa 37.3: Integrar ao JavaFX com Processamento em Lote sobre a `TableView`**
-  - *Descrição:* Executar dispatch duplo sobre os itens da tabela e renderizar relatórios consolidados em `TextArea` e indicadores visuais.
-
----
-
-## Fase 38 — Padrão GoF Flyweight (Otimização Extrema de Memória, Estados Intrínsecos/Extrínsecos e Renderização Eficiente)
-- [ ] **Tarefa 38.1: Segregar Estados Intrínsecos e Extrínsecos no Modelo de Domínio**
-  - *Descrição:* Criar Record imutável `EspecificacaoEquipamentoFlyweight` (intrínseco) e classe de contexto leve `ItemInventarioContexto` (extrínseco com ponteiro em RAM).
-  - *Guia Relacionado:* `guias/39-padrao-flyweight-otimizacao-memoria-e-estados-compartilhados.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/flyweight/ExemploFlyweightOtimizacaoMemoria.java`
-- [ ] **Tarefa 38.2: Implementar Fábrica de Flyweights com Pool Thread-Safe**
-  - *Descrição:* Gerenciar instâncias compartilhadas via `ConcurrentHashMap` com `compute()` atômico e rastreamento de reusos.
-- [ ] **Tarefa 38.3: Integrar à `TableView` JavaFX com Carga Massiva em Tempo Real**
-  - *Descrição:* Exibir milhares de itens em tabela mantendo pool constante de flyweights e painel com métricas de economia de memória.
-
----
-
-## Fase 39 — Padrão GoF Iterator & Paginação Virtual em JavaFX (Navegação Sob Demanda para Grandes Volumes)
-- [ ] **Tarefa 39.1: Definir o Contrato `IPaginadorIterator<T>` Bidirecional**
-  - *Descrição:* Declarar métodos para navegação por páginas (`hasNextPage`, `nextPage`, `previousPage`, `jumpToPage`, `setPageSize`, `aplicarFiltro`).
-  - *Guia Relacionado:* `guias/40-padrao-iterator-paginacao-virtual-e-navegacao-sob-demanda.md`
-  - *Exemplo de Apoio:* `src/main/java/br/edu/ifpb/didatico/exemplos/iterator/ExemploIteratorPaginacaoVirtualJavaFX.java`
-- [ ] **Tarefa 39.2: Implementar o Fatiador Virtual com Proteção de Limites**
-  - *Descrição:* Desenvolver `PaginadorVirtualMemoria` com fatiamento eficiente (`subList` imutável), tratamento para coleções vazias e reset atômico ao filtrar.
-- [ ] **Tarefa 39.3: Conectar à Barra de Navegação e `TableView` JavaFX**
-  - *Descrição:* Construir controles de interface (`<<`, `<`, indicador `Página X de Y`, `>`, `>>`, seletor de tamanho de lote e busca instantânea) garantindo 60 FPS estáveis.
+| Exigência do Professor no PDF | Atendimento no Checklist | Fase |
+| :--- | :--- | :--- |
+| **JavaFX (não use Swing)** | Interface implementada em FXML e OpenJFX 21 | Fases 8, 9 e 10 |
+| **Sem banco de dados (persistência em texto)** | Repositórios manuais com `BufferedReader` e `BufferedWriter` lendo CSV | Fase 5 |
+| **Sem concorrência (não use threads)** | Chamadas síncronas diretas sem threads ou pools de tarefas | Fases 6, 9 e 10 |
+| **Sem frameworks além do JavaFX** | Sem Spring, sem Hibernate/JPA, sem Jackson/Gson e sem Lombok | Todas as Fases |
+| **Código e comentários em português** | Nomenclatura descritiva idiomática sem variáveis genéricas | Todas as Fases |
+| **Padrão Strategy para cálculo de multas** | Interface `RegraMulta` com `MultaFixa`, `MultaProgressiva` e `IsencaoMulta` | Fase 3 |
+| **Exceção checada `ItemJaEmprestadoException`** | Exceção checada capturada no terminal e tratada via `Alert(AlertType.ERROR)` | Fases 4, 7 e 10 |
+| **Proteção de coleções contra mutação externa** | Retornos protegidos com `Collections.unmodifiableList(...)` | Fase 6 |
+| **Roteiro de teste funcional (Seção 7)** | Classe `PrincipalTerminal` cumprindo os 6 passos determinísticos | Fase 7 |
+| **Maven apenas onde necessário** | Configuração do `pom.xml` exclusivamente na Etapa 2 para o JavaFX | Fase 8 |
+| **Sem testes automatizados** | Nenhuma dependência JUnit; validação via terminal e GUI | Todas as Fases |
